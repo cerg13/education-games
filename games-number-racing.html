@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Гонки с Числами</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    window.storage = {
+      get: async function(key) {
+        try {
+          const value = localStorage.getItem(key);
+          return value ? { value } : { value: null };
+        } catch (e) {
+          return { value: null };
+        }
+      },
+      set: async function(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {}
+      },
+      delete: async function(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      }
+    };
+  </script>
+
+  <!-- Game loads and renders itself -->
+  <script type="text/babel" src="./number-racing.tsx"></script>
+</body>
+</html>

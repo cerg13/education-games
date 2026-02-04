@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Гонки с Числами</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      overflow-x: hidden;
+    }
+    @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+    @keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    @keyframes starBurst { 0% { opacity:1; transform: rotate(inherit) translateY(0) scale(1); } 100% { opacity:0; transform: rotate(inherit) translateY(-70px) scale(0); } }
+    @keyframes glow { 0%,100% { box-shadow: 0 0 20px rgba(255,255,255,0.4); } 50% { box-shadow: 0 0 40px rgba(255,255,255,0.8); } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    @keyframes roadMove { 0% { background-position: 0 0; } 100% { background-position: 0 60px; } }
+    @keyframes pulse { 0%,100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+    @keyframes speedLine { 0% { left: 100%; opacity: 0; } 50% { opacity: 0.5; } 100% { left: -60px; opacity: 0; } }
+    @keyframes carBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    window.storage = {
+      get: async function(key) {
+        try {
+          const value = localStorage.getItem(key);
+          return value ? { value } : { value: null };
+        } catch (e) {
+          return { value: null };
+        }
+      },
+      set: async function(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {}
+      },
+      delete: async function(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      }
+    };
+  </script>
+
+  <script type="text/babel" src="./number-racing.tsx"></script>
+
+  <script type="text/babel" data-type="module">
+    const { default: NumberRacing } = await import('./src/games/NumberRacing.tsx');
+
+    function GameWrapper() {
+      const [showBackButton, setShowBackButton] = React.useState(true);
+
+      return (
+        <>
+          {showBackButton && (
+            <button
+              onClick={() => window.location.href = 'index.html'}
+              className="fixed top-4 left-4 z-50 bg-white/20 backdrop-blur text-white px-4 py-2 rounded-xl hover:bg-white/30 transition-all shadow-lg"
+            >
+              ← Назад в меню
+            </button>
+          )}
+          <NumberRacing />
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<GameWrapper />);
+  </script>
+</body>
+</html>

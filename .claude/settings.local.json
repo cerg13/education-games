@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(ssh beget:*)",
+      "Bash(tar:*)",
+      "Bash(scp:*)",
+      "Bash(curl -s http://83.222.23.107:8081/api/health)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Skill(example-skills:webapp-testing)",
+      "Bash(python test_marketplace.py:*)",
+      "Bash(python test_navigation.py:*)",
+      "Bash(python test_number_racing_improvements.py:*)",
+      "Bash(python test_first_task_bug.py:*)",
+      "Bash(python:*)",
+      "Bash(powershell -command \"(Get-Item ''c:\\app\\coding\\Education games\\reading-game.tsx'').Length\")",
+      "Bash(rsync:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

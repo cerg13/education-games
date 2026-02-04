@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест - Обучающие Игры</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .test-box {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .success { border-color: #4ade80; background: rgba(74,222,128,0.2); }
+    .error { border-color: #f87171; background: rgba(248,113,113,0.2); }
+    button {
+      background: #4ade80;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover { background: #22c55e; }
+    #log {
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Диагностика приложения</h1>
+
+  <div class="test-box">
+    <h2>Информация о подключении</h2>
+    <p><strong>URL:</strong> <span id="current-url"></span></p>
+    <p><strong>API URL:</strong> <span id="api-url"></span></p>
+    <p><strong>Браузер:</strong> <span id="browser"></span></p>
+  </div>
+
+  <div class="test-box">
+    <h2>Тесты</h2>
+    <button onclick="testAPI()">✅ Тест API</button>
+    <button onclick="testProfiles()">👤 Тест профилей</button>
+    <button onclick="testReact()">⚛️ Тест React</button>
+    <button onclick="window.location.href='/'">🏠 На главную</button>
+  </div>
+
+  <div class="test-box">
+    <h2>Лог</h2>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const log = document.getElementById('log');
+
+    function addLog(message, isError = false) {
+      const time = new Date().toLocaleTimeString();
+      const color = isError ? '#f87171' : '#4ade80';
+      log.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Показываем информацию
+    document.getElementById('current-url').textContent = window.location.href;
+    document.getElementById('api-url').textContent = window.location.origin + '/api';
+    document.getElementById('browser').textContent = navigator.userAgent;
+
+    addLog('Страница загружена');
+
+    async function testAPI() {
+      addLog('Проверка API...');
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        addLog('✅ API работает: ' + JSON.stringify(data));
+      } catch (error) {
+        addLog('❌ Ошибка API: ' + error.message, true);
+      }
+    }
+
+    async function testProfiles() {
+      addLog('Загрузка профилей...');
+      try {
+        const response = await fetch('/api/profiles');
+        const data = await response.json();
+        addLog('✅ Профилей найдено: ' + data.length);
+        if (data.length > 0) {
+          addLog('   Профиль: ' + data[0].name + ' (' + data[0].character + ')');
+        }
+      } catch (error) {
+        addLog('❌ Ошибка загрузки профилей: ' + error.message, true);
+      }
+    }
+
+    async function testReact() {
+      addLog('Проверка React...');
+      if (typeof React !== 'undefined') {
+        addLog('✅ React загружен: ' + React.version);
+      } else {
+        addLog('❌ React не загружен', true);
+      }
+
+      if (typeof ReactDOM !== 'undefined') {
+        addLog('✅ ReactDOM загружен');
+      } else {
+        addLog('❌ ReactDOM не загружен', true);
+      }
+
+      if (typeof Babel !== 'undefined') {
+        addLog('✅ Babel загружен');
+      } else {
+        addLog('❌ Babel не загружен', true);
+      }
+    }
+
+    // Автоматически запускаем тесты
+    setTimeout(() => {
+      testAPI();
+      setTimeout(() => {
+        testProfiles();
+      }, 500);
+    }, 1000);
+  </script>
+</body>
+</html>

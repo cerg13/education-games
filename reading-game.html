@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Читайка</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      overflow-x: hidden;
+    }
+    @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    window.storage = {
+      get: async function(key) {
+        try {
+          const value = localStorage.getItem(key);
+          return value ? { value } : { value: null };
+        } catch (e) {
+          return { value: null };
+        }
+      },
+      set: async function(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {}
+      },
+      delete: async function(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      }
+    };
+  </script>
+
+  <script type="text/babel" src="./reading-game.tsx"></script>
+
+  <script type="text/babel" data-type="module">
+    const { default: ReadingGame } = await import('./src/games/ReadingGame.tsx');
+
+    function GameWrapper() {
+      const [showBackButton, setShowBackButton] = React.useState(true);
+
+      return (
+        <>
+          {showBackButton && (
+            <button
+              onClick={() => window.location.href = 'index.html'}
+              className="fixed top-4 right-4 z-50 bg-white/20 backdrop-blur text-white px-4 py-2 rounded-xl hover:bg-white/30 transition-all shadow-lg"
+            >
+              Назад в меню →
+            </button>
+          )}
+          <ReadingGame />
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<GameWrapper />);
+  </script>
+</body>
+</html>
