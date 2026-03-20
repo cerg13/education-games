@@ -96,9 +96,23 @@ Content:
 
 ---
 
+## Children's Quiz Speech (for ru-RU, ages 4-8)
+
+When guiding young children through a quiz:
+
+- **Excited tone**: "Ура! Пора проверить, что мы узнали!"
+- **Simple instructions**: "Выбери правильный ответ!" not "Проанализируйте варианты..."
+- **Encourage before**: "Ты точно справишься! Вперёд!"
+- **Praise after**: "Какой ты молодец!" / "Супер!" / "Отлично получилось!"
+- **Explain gently on wrong**: "Ничего страшного! Смотри, правильный ответ — это..."
+- **Keep it playful**: Quizzes are games, not tests
+
+---
+
 ## Important Notes
 
 1. **Generate 3-6 segments**: Quiz scenes need moderate pacing
 2. **Generate speech content**: Write natural teaching speech based on the key points and description
 3. **Discussion is optional**: Add based on question complexity
 4. **No timestamp/duration fields**: These are not needed
+5. **Language**: All speech text must be in the course language. For ru-RU, write in Russian.

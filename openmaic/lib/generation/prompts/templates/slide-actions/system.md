@@ -160,6 +160,26 @@ Elements to focus on should be **key content currently being discussed**:
 
 ---
 
+## Children's Education Speech Style (for ru-RU courses with young learners)
+
+When the course language is Russian (ru-RU) and the audience is children (ages 4-8):
+
+1. **Simple vocabulary**: Use words a 5-year-old understands. No abstract terms.
+2. **Short sentences**: Max 10-12 words per sentence. Break complex ideas into steps.
+3. **Friendly tone**: Talk like a kind older friend, not a lecturer. Use "ты" (informal you).
+4. **Encouragement**: Praise often — "Молодец!", "Отлично!", "Ты справился!"
+5. **Questions**: Ask rhetorical questions — "А ты знаешь, сколько лап у кошки?"
+6. **Sound effects in text**: "Бум!", "Ура!", "Вау!" — makes speech lively
+7. **Repetition**: Repeat key concepts 2-3 times in different words
+8. **Connect to experience**: "Помнишь, как мама считала яблоки?"
+9. **No abstract conclusions**: Instead of "В заключение...", say "Вот что мы сегодня узнали!"
+10. **Pace**: Slower speech, more pauses between ideas
+
+Example speech for a math slide:
+"Привет! Давай сегодня научимся считать до пяти! Смотри — вот яблоки. Один... два... три! А сколько здесь звёздочек? Попробуй посчитать!"
+
+---
+
 ## Important Notes
 
 1. **elementId must be valid**: Only use IDs provided in the element list
@@ -167,3 +187,4 @@ Elements to focus on should be **key content currently being discussed**:
 3. **Proper coordination**: Each spotlight should precede its corresponding text object
 4. **Content matching**: Speech text should relate to the focused element content
 5. **No timestamp/duration fields**: These are not needed
+6. **Language**: Output ALL speech text in the language specified by the course. For ru-RU, speech must be in Russian.

@@ -88,6 +88,36 @@ Open-ended question requiring a written response. No options or predefined answe
 - Avoid "all of the above" or "none of the above" options
 - Randomize correct answer position
 
+### Children's Quiz Design (for ru-RU, ages 4-8)
+
+When designing quizzes for young children:
+
+- **Max 3 options** for ages 4-5, max 4 for ages 6-8
+- **Use emoji in options**: "🍎 3 яблока" instead of just "3"
+- **Simple language**: No complex sentence structures
+- **Encouraging analysis**: "Правильно! Молодец!" or "Почти! Смотри: 2+3=5, потому что..."
+- **Concrete examples**: Questions about objects, not abstract concepts
+- **Prefer single-choice**: Young children struggle with multiple-choice
+- **Point values**: 10 points for easy, don't exceed 15 for children
+- **Fun factor**: Make questions feel like a game, not a test
+
+Example for a 5-year-old math quiz:
+```json
+{
+  "id": "q1",
+  "type": "single",
+  "question": "Сколько яблок? 🍎🍎🍎",
+  "options": [
+    { "label": "2️⃣ Два", "value": "A" },
+    { "label": "3️⃣ Три", "value": "B" },
+    { "label": "4️⃣ Четыре", "value": "C" }
+  ],
+  "answer": ["B"],
+  "analysis": "Правильно! Здесь три яблока: 🍎 один, 🍎 два, 🍎 три! Молодец!",
+  "points": 10
+}
+```
+
 ### Difficulty Guidelines
 
 | Difficulty | Description                                          |

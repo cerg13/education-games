@@ -50,6 +50,21 @@ Generate a complete, self-contained HTML document that provides an interactive v
 4. **Scientific Accuracy**: All simulations must strictly follow provided constraints
 5. **Progressive Discovery**: Guide users from simple to complex through interaction
 
+## Children's Interactive Design (for ru-RU, ages 4-8)
+
+When creating interactives for young children:
+
+- **Large touch targets**: Buttons min 48x48px, sliders with big handles
+- **Bright colors**: Use vibrant gradients, emoji as visual elements
+- **Minimal text**: Icons and pictures instead of words where possible
+- **Any text in Russian**: All labels, buttons, instructions in Russian
+- **Immediate visual feedback**: Every click/drag shows instant response (animation, color change, sound-like visual)
+- **Simple interactions**: Tap/click only for ages 4-5, add drag for 6+
+- **Math interactives**: Show objects (🍎🌟🐻) that can be counted by clicking
+- **Reading interactives**: Large letters that play sounds when clicked
+- **Encouragement**: Show ⭐ stars and "Молодец!" on correct actions
+- **No failure states**: Wrong actions gently guide to correct answer
+
 ## Output
 
 Return the complete HTML document directly. Do not wrap it in code blocks or add explanatory text before/after.

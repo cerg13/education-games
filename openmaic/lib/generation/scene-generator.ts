@@ -72,7 +72,7 @@ export async function generateFullScenes(
     currentStage: 3,
     overallProgress: 66,
     stageProgress: 0,
-    statusMessage: `正在并行生成 ${totalScenes} 个场景...`,
+    statusMessage: sceneOutlines[0]?.language === 'ru-RU' ? `Генерируем ${totalScenes} сцен...` : `正在并行生成 ${totalScenes} 个场景...`,
     scenesGenerated: 0,
     totalScenes,
   });
@@ -1036,12 +1036,15 @@ export async function generateSceneActions(
  * Generate default PBL Actions (fallback)
  */
 function generateDefaultPBLActions(_outline: SceneOutline): Action[] {
+  const isRu = _outline.language === 'ru-RU';
   return [
     {
       id: `action_${nanoid(8)}`,
       type: 'speech',
-      title: 'PBL 项目介绍',
-      text: '现在让我们开始一个项目式学习活动。请选择你的角色，查看任务看板，开始协作完成项目。',
+      title: isRu ? 'Введение в проект' : 'PBL 项目介绍',
+      text: isRu
+        ? 'А теперь давайте попробуем проект! Выбери свою роль и начинай выполнять задания.'
+        : '现在让我们开始一个项目式学习活动。请选择你的角色，查看任务看板，开始协作完成项目。',
     },
   ];
 }
@@ -1171,12 +1174,15 @@ function generateDefaultSlideActions(outline: SceneOutline, elements: PPTElement
  * Generate default quiz Actions (fallback)
  */
 function generateDefaultQuizActions(_outline: SceneOutline): Action[] {
+  const isRu = _outline.language === 'ru-RU';
   return [
     {
       id: `action_${nanoid(8)}`,
       type: 'speech',
-      title: '测验引导',
-      text: '现在让我们来做一个小测验，检验一下学习成果。',
+      title: isRu ? 'Проверка знаний' : '测验引导',
+      text: isRu
+        ? 'А теперь давай проверим, что ты запомнил! Ответь на вопросы — ты справишься!'
+        : '现在让我们来做一个小测验，检验一下学习成果。',
     },
   ];
 }
@@ -1185,12 +1191,15 @@ function generateDefaultQuizActions(_outline: SceneOutline): Action[] {
  * Generate default interactive Actions (fallback)
  */
 function generateDefaultInteractiveActions(_outline: SceneOutline): Action[] {
+  const isRu = _outline.language === 'ru-RU';
   return [
     {
       id: `action_${nanoid(8)}`,
       type: 'speech',
-      title: '交互引导',
-      text: '现在让我们通过交互式可视化来探索这个概念。请尝试操作页面中的元素，观察变化。',
+      title: isRu ? 'Интерактивное задание' : '交互引导',
+      text: isRu
+        ? 'Попробуй сам! Нажимай на элементы и смотри, что получится.'
+        : '现在让我们通过交互式可视化来探索这个概念。请尝试操作页面中的元素，观察变化。',
     },
   ];
 }

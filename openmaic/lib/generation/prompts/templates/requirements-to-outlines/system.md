@@ -286,6 +286,93 @@ You must output a JSON array where each element is a scene outline object:
 
 ---
 
+## Children's Education Methodology (for ages 4-8, Russian-language courses)
+
+When designing lessons for young children (ages 4-8), apply these proven pedagogical principles:
+
+### Core Principles
+
+1. **Concrete to Abstract** (Piaget): Start with real objects (fruits, animals, toys), then move to symbols and numbers
+2. **Scaffolding** (Vygotsky): Each step builds on the previous one. Never skip difficulty levels
+3. **Immediate Feedback**: Every answer gets instant response — praise for correct, gentle correction for wrong
+4. **Multimodal Learning**: Combine visual (pictures, emoji), auditory (voice narration), and kinesthetic (interactive clicking/dragging)
+5. **Short Sessions**: 3-5 minutes per scene for ages 4-5, 5-8 minutes for ages 6-8
+6. **Growth Mindset**: Use encouraging language: "Почти! Попробуй ещё!" never "Неправильно!"
+
+### Lesson Structure for Children
+
+- **Scene 1**: Introduction with a story/character hook (slide with bright visuals)
+- **Scene 2-3**: Core content with examples from child's life (slides with emoji, pictures)
+- **Scene 4**: Interactive practice or simple quiz (quiz with easy difficulty)
+- **Scene 5**: Summary + encouragement (slide)
+- **Total**: 3-5 scenes, 5-10 minutes
+
+### Subject-Specific Guidelines
+
+#### Mathematics (Математика)
+- **Counting (Счёт)**: Use emoji groups (🍎🍎🍎 = 3), ten-frames, number lines
+- **Comparison**: Side-by-side visuals (5 stars vs 3 stars — which is more?)
+- **Addition/Subtraction**: Story problems with objects ("У Маши 3 яблока, мама дала ещё 2")
+- **Shapes**: Real-world examples (окно = прямоугольник, мяч = круг)
+- **Quiz format**: Single-choice with emoji options, max 3-4 options
+- **Difficulty progression**: count→compare→add/sub→compose 10→missing number
+
+#### Reading (Чтение) — Zaitsev Method
+- **Letters**: Teach phonemes (sounds), not letter names. М = "мммм", not "эм"
+- **Syllables**: Group by articulation — sonorants (М,Л,Н,Р) first, then stops (К,П,Т)
+- **Words**: Start with 2-syllable words (МА-МА, ПА-ПА, СО-М)
+- **Sentences**: Simple SVO structure, 3-5 words max
+- **Visual aids**: Large text (36px+), one word per screen, picture paired with word
+- **Spaced repetition**: Review intervals — Day 1, 3, 7, 14, 30
+
+#### Surrounding World (Окружающий мир)
+- **Animals**: Start with familiar (cat, dog), then wild (bear, fox), then exotic
+- **Plants**: Seasonal focus — what grows now? Trees vs flowers vs berries
+- **Weather**: Connect to child's experience ("Посмотри в окно — что видишь?")
+- **Body**: Name body parts, 5 senses, hygiene basics
+- **Transport**: Familiar vehicles, sounds they make
+- **Fun facts**: "А ты знал, что..." format engages curiosity
+
+#### Logic (Логика)
+- **Patterns**: Repeat visual sequences (🔴🔵🔴🔵❓)
+- **Classification**: "Найди лишнее" (odd one out)
+- **Sequences**: What comes next? (1, 2, 3, ?)
+- **Spatial reasoning**: Left/right, up/down, bigger/smaller
+
+#### Nature (Природа)
+- **Seasons**: What happens in each season with animals, plants, weather
+- **Insects**: Butterfly lifecycle, ant colonies — visual and fascinating
+- **Water cycle**: Simple version with rain, puddles, sun
+
+#### Emotions (Эмоции)
+- **Basic emotions**: Happy, sad, angry, scared — with emoji faces
+- **Scenarios**: "Как бы ты себя чувствовал, если..." — situational learning
+- **Friendship**: Sharing, helping, being kind
+
+#### Safety (Безопасность)
+- **Road safety**: Traffic light colors, crosswalks, holding hands
+- **Home safety**: Hot stove, sharp objects, medicines
+- **Stranger danger**: Simple rules without scaring the child
+
+### Quiz Design for Children
+
+- **Max 3-4 options** per question (young children get overwhelmed with more)
+- **Use emoji/pictures** in options when possible
+- **Difficulty**: Always start with "easy", progress to "medium" only if topic requires
+- **Question types**: Prefer `single` choice for ages 4-6, add `short_answer` for 7+
+- **Positive feedback**: Every quiz should feel achievable (aim for 70%+ success rate)
+- **Question count**: 2-3 questions per quiz scene (not more)
+
+### Visual Design for Children
+
+- **Bright, saturated colors** — gradients encouraged
+- **Large text**: Minimum 24px for content, 36px for titles
+- **Emoji everywhere**: Replace abstract icons with emoji (⭐🍎🐻🚗)
+- **White space**: Don't overcrowd slides — 3-4 elements max per slide
+- **No walls of text**: Max 2-3 short sentences per slide
+
+---
+
 ## Important Reminders
 
 1. **Must output valid JSON array format**

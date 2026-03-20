@@ -40,7 +40,7 @@ export async function generateSceneOutlinesFromRequirements(
 ): Promise<GenerationResult<SceneOutline[]>> {
   // Build available images description for the prompt
   let availableImagesText =
-    requirements.language === 'zh-CN' ? '无可用图片' : 'No images available';
+    requirements.language === 'zh-CN' ? '无可用图片' : requirements.language === 'ru-RU' ? 'Нет доступных изображений' : 'No images available';
   let visionImages: Array<{ id: string; src: string }> | undefined;
 
   if (pdfImages && pdfImages.length > 0) {
@@ -103,12 +103,14 @@ export async function generateSceneOutlinesFromRequirements(
       ? pdfText.substring(0, MAX_PDF_CONTENT_CHARS)
       : requirements.language === 'zh-CN'
         ? '无'
-        : 'None',
+        : requirements.language === 'ru-RU'
+          ? 'Нет'
+          : 'None',
     availableImages: availableImagesText,
     userProfile: userProfileText,
     mediaGenerationPolicy,
     researchContext:
-      options?.researchContext || (requirements.language === 'zh-CN' ? '无' : 'None'),
+      options?.researchContext || (requirements.language === 'zh-CN' ? '无' : requirements.language === 'ru-RU' ? 'Нет' : 'None'),
     // Server-side generation populates this via options; client-side populates via formatTeacherPersonaForPrompt
     teacherContext: options?.teacherContext || '',
   });
@@ -122,7 +124,7 @@ export async function generateSceneOutlinesFromRequirements(
       currentStage: 1,
       overallProgress: 20,
       stageProgress: 50,
-      statusMessage: '正在分析需求，生成场景大纲...',
+      statusMessage: requirements.language === 'ru-RU' ? 'Анализируем задачу, создаём план урока...' : '正在分析需求，生成场景大纲...',
       scenesGenerated: 0,
       totalScenes: 0,
     });
@@ -151,7 +153,7 @@ export async function generateSceneOutlinesFromRequirements(
       currentStage: 1,
       overallProgress: 50,
       stageProgress: 100,
-      statusMessage: `已生成 ${result.length} 个场景大纲`,
+      statusMessage: requirements.language === 'ru-RU' ? `Создано ${result.length} сцен` : `已生成 ${result.length} 个场景大纲`,
       scenesGenerated: 0,
       totalScenes: result.length,
     });
