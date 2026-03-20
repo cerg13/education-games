@@ -130,9 +130,11 @@ export async function generateSceneOutlinesFromRequirements(
     });
 
     const response = await aiCall(prompts.system, prompts.user, visionImages);
+    log.info(`[Outline] Raw response (first 500 chars): ${response.substring(0, 500)}`);
     const outlines = parseJsonResponse<SceneOutline[]>(response);
 
     if (!outlines || !Array.isArray(outlines)) {
+      log.error(`[Outline] Failed to parse. Full response: ${response.substring(0, 2000)}`);
       return {
         success: false,
         error: 'Failed to parse scene outlines response',
