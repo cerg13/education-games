@@ -43,6 +43,7 @@ function getTTSProviderName(providerId: TTSProviderId, t: (key: string) => strin
     'azure-tts': t('settings.providerAzureTTS'),
     'glm-tts': t('settings.providerGLMTTS'),
     'qwen-tts': t('settings.providerQwenTTS'),
+    'silero-tts': 'Silero TTS (Russian)',
     'browser-native-tts': t('settings.providerBrowserNativeTTS'),
   };
   return names[providerId];

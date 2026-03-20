@@ -309,6 +309,8 @@ export async function callLLM<T extends GenerateTextParams>(
         generateText(injectedParams),
       );
 
+      log.info(`[${source}] Response length: ${result.text.length}, first 100: ${result.text.substring(0, 100)}`);
+
       // Validate result (only when retries are configured)
       if (validate && !validate(result.text)) {
         log.warn(

@@ -9,10 +9,12 @@
 import { nanoid } from 'nanoid';
 import type {
   TopicNode,
+  TopicTree,
   KnowledgeEntry,
   ChildProfile,
   Lesson,
   LessonFormat,
+  LessonQueue,
   SubjectId,
 } from './types';
 import type { WorkerCallbacks } from './background-worker';
