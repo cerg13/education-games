@@ -996,9 +996,27 @@ export function getModel(config: ModelConfig): ModelWithInfo {
     }
 
     case 'anthropic': {
+      // Custom fetch to inject _timeout and cap max_tokens for our Claude proxy
+      const customFetch: typeof globalThis.fetch = async (input, init) => {
+        if (init?.body && typeof init.body === 'string') {
+          try {
+            const body = JSON.parse(init.body);
+            body._timeout = 900; // 15 min timeout for long generation prompts
+            // Cap max_tokens to avoid proxy timeout on huge responses
+            if (body.max_tokens > 8000) {
+              body.max_tokens = 8000;
+            }
+            init = { ...init, body: JSON.stringify(body) };
+          } catch {
+            // not JSON, pass through
+          }
+        }
+        return globalThis.fetch(input, init);
+      };
       const anthropic = createAnthropic({
         apiKey: effectiveApiKey,
         baseURL: effectiveBaseUrl,
+        fetch: customFetch,
       });
       model = anthropic.chat(config.modelId);
       break;

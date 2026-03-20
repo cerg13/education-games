@@ -198,7 +198,7 @@ export async function generateClassroom(
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        maxOutputTokens: modelInfo?.outputWindow,
+        maxOutputTokens: Math.min(modelInfo?.outputWindow || 8000, 8000),
       },
       'generate-classroom',
     );
