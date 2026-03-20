@@ -99,6 +99,42 @@ export default function KidsPage() {
     speak('Отлично! Выбирай следующий урок');
   };
 
+  // Auto-speak on screen change (for non-reading children)
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      switch (screen) {
+        case 'profiles':
+          speak('Выбери игрока');
+          break;
+        case 'create':
+          speak('Выбери друга и напиши своё имя');
+          break;
+        case 'menu': {
+          const p = store.getActiveProfile();
+          const next = store.getNextLesson();
+          if (next) {
+            speak(`Привет, ${p?.name || ''}! Следующий урок: ${next.title}. Нажми зелёную кнопку чтобы начать!`);
+          } else {
+            speak(`Привет, ${p?.name || ''}! Уроки готовятся, подожди немножко`);
+          }
+          break;
+        }
+        case 'lesson':
+          if (store.activeLesson) {
+            speak(`Урок: ${store.activeLesson.title}. ${store.activeLesson.description}`);
+          }
+          break;
+        case 'feedback':
+          speak('Молодец! Тебе понравилось? Нажми на смайлик');
+          break;
+        case 'subjects':
+          speak('Выбери предмет');
+          break;
+      }
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [screen]);
+
   const profile = store.getActiveProfile();
   const profiles = Object.values(store.profiles);
 

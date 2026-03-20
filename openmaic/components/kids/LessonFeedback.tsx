@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FeedbackRating } from '@/lib/curriculum/types';
 
 interface LessonFeedbackProps {
@@ -19,6 +19,23 @@ const FEEDBACK_OPTIONS: { rating: FeedbackRating; emoji: string; label: string; 
 
 export function LessonFeedback({ lessonTitle, score, starsEarned, onSubmit }: LessonFeedbackProps) {
   const [selected, setSelected] = useState<FeedbackRating | null>(null);
+
+  const speak = useCallback((text: string) => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ru-RU';
+      u.rate = 0.8;
+      window.speechSynthesis.speak(u);
+    }
+  }, []);
+
+  useEffect(() => {
+    const msg = starsEarned >= 2
+      ? `Молодец! Ты получил ${starsEarned} звезды! Тебе понравилось?`
+      : `Хорошо! Ты получил ${starsEarned} звезду. Тебе понравилось?`;
+    speak(msg);
+  }, [starsEarned, speak]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-500 to-purple-600 flex flex-col items-center justify-center p-6">
@@ -47,7 +64,7 @@ export function LessonFeedback({ lessonTitle, score, starsEarned, onSubmit }: Le
         {FEEDBACK_OPTIONS.map((opt) => (
           <button
             key={opt.rating}
-            onClick={() => setSelected(opt.rating)}
+            onClick={() => { setSelected(opt.rating); speak(opt.label); }}
             className={`
               bg-gradient-to-br ${opt.color} rounded-2xl p-4 text-center
               transition-all duration-200 shadow-lg

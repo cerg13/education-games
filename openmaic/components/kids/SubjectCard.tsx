@@ -1,6 +1,19 @@
 'use client';
 
+import { useCallback } from 'react';
 import type { SubjectId } from '@/lib/curriculum/types';
+
+function useSpeak() {
+  return useCallback((text: string) => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ru-RU';
+      u.rate = 0.8;
+      window.speechSynthesis.speak(u);
+    }
+  }, []);
+}
 
 const SUBJECT_CONFIG: Record<SubjectId, { name: string; icon: string; color: string; gradient: string }> = {
   math: { name: 'Математика', icon: '🔢', color: '#8B5CF6', gradient: 'from-violet-500 to-purple-600' },
@@ -31,10 +44,16 @@ export function SubjectCard({
 }: SubjectCardProps) {
   const config = SUBJECT_CONFIG[subjectId];
   const stars = Math.min(3, Math.floor(averageScore / 30));
+  const speak = useSpeak();
+
+  const handleClick = () => {
+    speak(config.name);
+    onClick();
+  };
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={isLocked}
       className={`
         w-full rounded-3xl p-5 shadow-xl transition-all duration-200

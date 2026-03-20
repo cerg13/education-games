@@ -25,6 +25,8 @@ import {
   getNextLesson,
   startLesson,
   completeLesson,
+  addReadyLesson,
+  createPendingLesson,
 } from './lesson-queue';
 import {
   startWorker,
@@ -85,6 +87,30 @@ export const useCurriculumStore = create<CurriculumStore>()(
         const id = nanoid(10);
         const profile = createChildProfile(id, name, age, character);
         const queue = createLessonQueue(id);
+
+        // Seed initial lessons from topic tree so child has something to start with
+        const tree = get().topicTree;
+        const seedSubjects: SubjectId[] = ['math', 'reading', 'world'];
+        for (const sub of seedSubjects) {
+          const rootTopics = tree.subjects[sub].rootTopics;
+          if (rootTopics.length > 0) {
+            const topicId = rootTopics[0];
+            const topic = tree.nodes[topicId];
+            if (topic) {
+              const lesson = createPendingLesson(
+                topicId,
+                sub,
+                topic.title,
+                topic.description,
+                topic.difficulty,
+                sub === 'math' ? 'interactive' : sub === 'reading' ? 'slides' : 'story',
+              );
+              lesson.status = 'ready';
+              lesson.queuePosition = seedSubjects.indexOf(sub);
+              addReadyLesson(queue, lesson);
+            }
+          }
+        }
 
         set((state) => ({
           profiles: { ...state.profiles, [id]: profile },
