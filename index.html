@@ -223,6 +223,15 @@
         minAge: 4,
         skills: ['Счёт', 'Сравнение', 'Сложение'],
       },
+      {
+        id: 'smart-classroom',
+        name: 'Умная Классная',
+        description: 'AI-учитель с адаптивными уроками',
+        icon: '🎓',
+        color: 'from-emerald-500 to-teal-600',
+        minAge: 5,
+        skills: ['Математика', 'Чтение', 'Окр. мир', 'AI'],
+      },
     ];
 
     // ============= HOOKS =============
@@ -588,6 +597,10 @@
           window.location.href = `games-reading.html?profile=${profileId}`;
         } else if (gameId === 'number-island') {
           window.location.href = `games-number-island.html?profile=${profileId}`;
+        } else if (gameId === 'smart-classroom') {
+          // OpenMAIC Smart Classroom — opens on port 3001 or relative /kids
+          const openmaicUrl = window.OPENMAIC_URL || 'http://localhost:3001';
+          window.location.href = `${openmaicUrl}/kids?profile=${profileId}`;
         }
       };
 

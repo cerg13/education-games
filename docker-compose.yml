@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # OpenMAIC — AI Interactive Classroom
+  openmaic:
+    build: ./openmaic
+    ports:
+      - "3001:3000"
+    env_file:
+      - ./openmaic/.env.local
+    volumes:
+      - openmaic-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Education Games Marketplace (existing)
+  marketplace:
+    build:
+      context: .
+      dockerfile: Dockerfile.marketplace
+    ports:
+      - "8080:8080"
+    environment:
+      - OPENMAIC_URL=http://openmaic:3000
+    depends_on:
+      openmaic:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  openmaic-data:
