@@ -189,13 +189,23 @@ export default function KidsClassroomPage() {
             {/* Slide content */}
             <div className="bg-white rounded-2xl p-6 shadow-xl flex-1 mb-4">
               {getSlideTexts(scene.content).map((text, i) => (
-                <p key={i} className="text-gray-800 text-lg mb-3 leading-relaxed">{text}</p>
+                <p
+                  key={i}
+                  onClick={() => speak(text)}
+                  className="text-gray-800 text-lg mb-3 leading-relaxed cursor-pointer hover:bg-purple-50 active:bg-purple-100 rounded-lg p-1 -m-1 transition-colors"
+                  title="Нажми, чтобы послушать"
+                >
+                  🔊 {text}
+                </p>
               ))}
             </div>
 
             {/* Speech bubble */}
             {currentSpeech && (
-              <div className="bg-white/20 backdrop-blur rounded-2xl p-4 mb-4">
+              <div
+                onClick={() => speak(currentSpeech)}
+                className="bg-white/20 backdrop-blur rounded-2xl p-4 mb-4 cursor-pointer hover:bg-white/30 active:bg-white/40 transition-colors"
+              >
                 <p className="text-white text-lg leading-relaxed">🗣️ {currentSpeech}</p>
               </div>
             )}
@@ -206,7 +216,10 @@ export default function KidsClassroomPage() {
           <div className="flex-1 flex flex-col gap-4">
             {/* Speech intro */}
             {currentSpeech && (
-              <div className="bg-white/20 backdrop-blur rounded-2xl p-4">
+              <div
+                onClick={() => speak(currentSpeech)}
+                className="bg-white/20 backdrop-blur rounded-2xl p-4 cursor-pointer hover:bg-white/30 transition-colors"
+              >
                 <p className="text-white text-lg">🗣️ {currentSpeech}</p>
               </div>
             )}
@@ -214,7 +227,12 @@ export default function KidsClassroomPage() {
             {/* Questions */}
             {scene.content?.questions?.map((q: QuizQuestion) => (
               <div key={q.id} className="bg-white rounded-2xl p-5 shadow-xl">
-                <p className="text-gray-800 font-bold text-lg mb-3">{q.question}</p>
+                <p
+                  onClick={() => speak(q.question)}
+                  className="text-gray-800 font-bold text-lg mb-3 cursor-pointer hover:bg-purple-50 rounded-lg p-1 -m-1 transition-colors"
+                >
+                  🔊 {q.question}
+                </p>
                 <div className="space-y-2">
                   {q.options?.map((opt) => {
                     const isSelected = quizAnswers[q.id] === opt.value;

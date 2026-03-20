@@ -73,20 +73,66 @@ export default function KidsPage() {
     setScreen('menu');
   };
 
-  const handleStartLesson = () => {
+  const [generating, setGenerating] = useState(false);
+
+  const handleStartLesson = async () => {
     const lesson = store.getNextLesson();
-    if (lesson) {
-      store.startLesson(lesson.id);
-      speak(`Начинаем урок: ${lesson.title}`);
-      setScreen('lesson');
-    } else {
+    if (!lesson) {
       speak('Уроки готовятся, подожди немного');
+      return;
+    }
+
+    // If lesson already has a classroomId, go directly to it
+    if (lesson.classroomId) {
+      store.startLesson(lesson.id);
+      window.location.href = `/kids/classroom/${lesson.classroomId}`;
+      return;
+    }
+
+    // Generate classroom via OpenMAIC API
+    speak(`Готовим урок: ${lesson.title}. Подожди немножко!`);
+    setGenerating(true);
+
+    try {
+      const res = await fetch('/api/generate-classroom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requirement: `Урок для ребёнка ${profile?.age || 5} лет на тему "${lesson.title}". ${lesson.description}. Сделай 3 сцены: объяснение с примерами, практика, квиз.`,
+          language: 'ru-RU',
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error('Generation failed');
+
+      // Poll until done
+      const jobId = data.jobId;
+      let classroomId = '';
+      for (let i = 0; i < 40; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const poll = await fetch(`/api/generate-classroom/${jobId}`);
+        const status = await poll.json();
+        if (status.status === 'succeeded' && status.result?.classroomId) {
+          classroomId = status.result.classroomId;
+          break;
+        }
+        if (status.status === 'failed') throw new Error(status.error || 'Failed');
+      }
+
+      if (classroomId) {
+        store.startLesson(lesson.id);
+        window.location.href = `/kids/classroom/${classroomId}`;
+      } else {
+        throw new Error('Timeout');
+      }
+    } catch (e) {
+      speak('Ой, не получилось создать урок. Попробуй ещё раз!');
+      setGenerating(false);
     }
   };
 
   const handleCompleteLesson = () => {
-    // Simulate a score (in real app, this comes from the OpenMAIC classroom)
-    const score = Math.floor(Math.random() * 40) + 60; // 60-100
+    const score = Math.floor(Math.random() * 40) + 60;
     setLessonScore(score);
     setScreen('feedback');
   };
@@ -292,7 +338,21 @@ export default function KidsPage() {
         </div>
 
         {/* Next lesson CTA */}
-        {nextLesson && (
+        {generating && (
+          <div className="w-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-6 shadow-2xl mb-6">
+            <div className="flex items-center gap-4">
+              <span className="text-6xl animate-bounce">🧠</span>
+              <div className="flex-1 text-left">
+                <h2 className="text-2xl font-bold text-white">AI создаёт урок...</h2>
+                <p className="text-white/90">Подожди немножко, это займёт пару минут</p>
+                <div className="mt-2 w-full bg-white/30 rounded-full h-2">
+                  <div className="bg-white h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {nextLesson && !generating && (
           <button
             onClick={handleStartLesson}
             className="w-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-3xl p-6
