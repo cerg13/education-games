@@ -938,10 +938,12 @@ const ParkingGame = ({ car, onComplete, onBack }) => {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const letter = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
     const others = ALL_LETTERS.filter(l => l !== letter).sort(() => Math.random() - 0.5).slice(0, 2);
     const opts = [letter, ...others].sort(() => Math.random() - 0.5);
@@ -954,7 +956,9 @@ const ParkingGame = ({ car, onComplete, onBack }) => {
   useEffect(() => { generateRound(); }, [generateRound]);
 
   const handlePark = () => {
+    if (busyRef.current) return;
     if (options[carPosition] === targetLetter) {
+      busyRef.current = true;
       setShowResult('correct');
       setScore(s => s + 1);
       if (score + 1 >= targetScore) {
@@ -1031,10 +1035,12 @@ const FuelGame = ({ car, onComplete, onBack }) => {
   const [fuel, setFuel] = useState(0);
   const [showResult, setShowResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const maxFuel = 5;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const letter = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
     const others = ALL_LETTERS.filter(l => l !== letter).sort(() => Math.random() - 0.5).slice(0, 3);
     setTargetLetter(letter);
@@ -1045,7 +1051,9 @@ const FuelGame = ({ car, onComplete, onBack }) => {
   useEffect(() => { generateRound(); }, [generateRound]);
 
   const handleFuel = (letter) => {
+    if (busyRef.current) return;
     if (letter === targetLetter) {
+      busyRef.current = true;
       setShowResult('correct');
       const newFuel = fuel + 1;
       setFuel(newFuel);
@@ -1113,10 +1121,12 @@ const TaxiGame = ({ car, onComplete, onBack }) => {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 3;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const wordObj = SIMPLE_WORDS[Math.floor(Math.random() * SIMPLE_WORDS.length)];
     const letters = wordObj.word.split('');
     const extras = ALL_LETTERS.filter(l => !letters.includes(l)).sort(() => Math.random() - 0.5).slice(0, 2);
@@ -1129,6 +1139,7 @@ const TaxiGame = ({ car, onComplete, onBack }) => {
   useEffect(() => { generateRound(); }, [generateRound]);
 
   const handlePickup = (letter, idx) => {
+    if (busyRef.current) return;
     if (!currentWord) return;
     const nextLetter = currentWord.word[collected.length];
 
@@ -1139,6 +1150,7 @@ const TaxiGame = ({ car, onComplete, onBack }) => {
       speak(letter);
 
       if (newCollected.length === currentWord.word.length) {
+        busyRef.current = true;
         setShowResult('correct');
         setScore(s => s + 1);
         if (score + 1 >= targetScore) {
@@ -1213,10 +1225,12 @@ const PoliceGame = ({ car, onComplete, onBack }) => {
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [score, setScore] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const letter = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
     setTargetLetter(letter);
     setPosition({ x: 20 + Math.random() * 60, y: 20 + Math.random() * 40 });
@@ -1236,6 +1250,8 @@ const PoliceGame = ({ car, onComplete, onBack }) => {
   }, [targetLetter]);
 
   const handleCatch = () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setScore(s => {
       const newScore = s + 1;
       if (newScore >= targetScore) {
@@ -1290,10 +1306,12 @@ const AmbulanceGame = ({ car, onComplete, onBack }) => {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const wordObj = SIMPLE_WORDS[Math.floor(Math.random() * SIMPLE_WORDS.length)];
     const idx = Math.floor(Math.random() * wordObj.word.length);
     const correctLetter = wordObj.word[idx];
@@ -1307,8 +1325,10 @@ const AmbulanceGame = ({ car, onComplete, onBack }) => {
   useEffect(() => { generateRound(); }, [generateRound]);
 
   const handleChoice = (letter) => {
+    if (busyRef.current) return;
     if (!currentWord) return;
     if (letter === currentWord.word[missingIdx]) {
+      busyRef.current = true;
       setShowResult('correct');
       setScore(s => {
         const newScore = s + 1;
@@ -1386,10 +1406,12 @@ const FireGame = ({ car, onComplete, onBack }) => {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 8;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const letter = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
     const fireLetters = [letter, letter, ...ALL_LETTERS.filter(l => l !== letter).sort(() => Math.random() - 0.5).slice(0, 4)];
     setTargetLetter(letter);
@@ -1400,12 +1422,14 @@ const FireGame = ({ car, onComplete, onBack }) => {
   useEffect(() => { generateRound(); }, [generateRound]);
 
   const handleExtinguish = (fire) => {
+    if (busyRef.current) return;
     if (!fire.active) return;
     if (fire.letter === targetLetter) {
       setFires(f => f.map(ff => ff.id === fire.id ? { ...ff, active: false } : ff));
       setScore(s => {
         const newScore = s + 1;
         if (newScore >= targetScore) {
+          busyRef.current = true;
           setShowConfetti(true);
           setTimeout(() => onComplete(8), 1500);
         }
@@ -1414,6 +1438,7 @@ const FireGame = ({ car, onComplete, onBack }) => {
       // Check if all target letters extinguished
       const remaining = fires.filter(f => f.active && f.letter === targetLetter && f.id !== fire.id);
       if (remaining.length === 0) {
+        busyRef.current = true;
         setTimeout(generateRound, 500);
       }
     } else {
@@ -1463,10 +1488,12 @@ const DeliveryGame = ({ car, onComplete, onBack }) => {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
+    busyRef.current = false;
     const consonant = CONSONANTS[Math.floor(Math.random() * CONSONANTS.length)];
     const vowel = VOWELS_HARD[Math.floor(Math.random() * VOWELS_HARD.length)];
     const syllable = consonant + vowel;
@@ -1480,7 +1507,9 @@ const DeliveryGame = ({ car, onComplete, onBack }) => {
   useEffect(() => { generateRound(); }, [generateRound]);
 
   const handleDeliver = (house) => {
+    if (busyRef.current) return;
     if (house.syllable === currentSyllable) {
+      busyRef.current = true;
       setShowResult('correct');
       setScore(s => {
         const newScore = s + 1;
@@ -1543,6 +1572,7 @@ const RaceGame = ({ car, onComplete, onBack }) => {
   const [timeLeft, setTimeLeft] = useState(20);
   const [gameOver, setGameOver] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
 
   const spawnLetters = useCallback(() => {
@@ -1591,7 +1621,8 @@ const RaceGame = ({ car, onComplete, onBack }) => {
       setTimeLeft(t => {
         if (t <= 1) {
           setGameOver(true);
-          if (score >= 5) {
+          if (score >= 5 && !busyRef.current) {
+            busyRef.current = true;
             setShowConfetti(true);
             setTimeout(() => onComplete(Math.min(score, 10)), 1500);
           }
@@ -2869,12 +2900,14 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [shakeItem, setShakeItem] = useState(null);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 5;
 
   useEffect(() => { speak(target); }, [target, speak]);
 
   useEffect(() => {
+    busyRef.current = false;
     const pool = options.filter(o => o !== target);
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     const wrong = shuffled.slice(0, Math.min(difficulty - 1, shuffled.length));
@@ -2883,8 +2916,10 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
   }, [target, options, difficulty, key]);
 
   const handleTap = (item) => {
+    if (busyRef.current) return;
     speak(item.value);
     if (item.value === target) {
+      busyRef.current = true;
       const ns = score + 1;
       setScore(ns);
       setStreak(streak + 1);
@@ -3027,6 +3062,7 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
   const targetScore = 5;
 
@@ -3048,6 +3084,7 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
   }, []);
 
   const pop = (b) => {
+    if (busyRef.current) return;
     speak(b.value);
     setBubbles(p => p.filter(x => x.id !== b.id));
     if (b.value === target) {
@@ -3056,6 +3093,7 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
       setWrongAttempts(0);
       setShowHint(false);
       if (ns >= targetScore) {
+        busyRef.current = true;
         setShowConfetti(true);
         setTimeout(() => onComplete(3), 1500);
       }
@@ -3771,14 +3809,18 @@ const BuildWordGame = ({ wordData, onComplete, onBack }) => {
 const ReadWordGame = ({ wordData, onComplete, onBack }) => {
   const [idx, setIdx] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
 
   useEffect(() => { speak('Читай'); }, [speak]);
 
   const handleTap = () => {
+    if (busyRef.current) return;
     speak(wordData.syllables[idx], 0.5);
     if (idx + 1 >= wordData.syllables.length) {
-      setTimeout(() => { speak(wordData.display, 0.7); setShowConfetti(true); setTimeout(() => onComplete(2), 1800); }, 600);
+      busyRef.current = true;
+      setTimeout(() => { speak(wordData.display, 0.7); setShowConfetti(true); }, 600);
+      setTimeout(() => onComplete(2), 2400);
     } else setIdx(idx + 1);
   };
 
@@ -3804,15 +3846,19 @@ const ReadWordGame = ({ wordData, onComplete, onBack }) => {
 const ReadSentenceGame = ({ sentence, onComplete, onBack }) => {
   const [idx, setIdx] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const busyRef = useRef(false);
   const speak = useSpeak();
 
   useEffect(() => { speak('Читай предложение'); }, [speak]);
 
   const handleTap = (i) => {
+    if (busyRef.current) return;
     if (i !== idx) return;
     speak(sentence.words[i], 0.6);
     if (idx + 1 >= sentence.words.length) {
-      setTimeout(() => { speak(sentence.text, 0.7); setShowConfetti(true); setTimeout(() => onComplete(3), 2000); }, 600);
+      busyRef.current = true;
+      setTimeout(() => { speak(sentence.text, 0.7); setShowConfetti(true); }, 600);
+      setTimeout(() => onComplete(3), 2600);
     } else setIdx(idx + 1);
   };
 
@@ -4413,6 +4459,21 @@ function ReadingGame() {
     };
     load();
   }, []);
+
+  // Debounced persistence прогресса (страховка + localStorage fallback)
+  useEffect(() => {
+    if (!currentProfile?.id) return;
+    const t = setTimeout(() => {
+      fetch(`/api/profiles/${currentProfile.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentProfile),
+      }).catch(() => {
+        try { localStorage.setItem(`chitayka-profile-${currentProfile.id}`, JSON.stringify(currentProfile)); } catch {}
+      });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [currentProfile]);
 
   // Таймер сессии (20 минут)
   useEffect(() => {
