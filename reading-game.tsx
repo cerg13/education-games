@@ -870,11 +870,9 @@ const ALL_VOWELS_SET = new Set([...ALL_VOWELS_HARD, ...ALL_VOWELS_SOFT]);
 const syllableClass = (syl) => {
   if (!syl) return 'bg-white/50 text-gray-500';
   const s = String(syl).toUpperCase();
-  // Одиночная гласная — золотой кубик
   if (s.length === 1 && ALL_VOWELS_SET.has(s)) {
     return 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 shadow-lg';
   }
-  // Ищем первую согласную в складе, по ней определяем тип кубика
   for (const ch of s) {
     if (VOICED_CONSONANTS.has(ch)) {
       return 'bg-gradient-to-br from-amber-600 to-amber-800 text-white shadow-lg';
@@ -883,8 +881,81 @@ const syllableClass = (syl) => {
       return 'bg-gradient-to-br from-slate-400 to-slate-600 text-white shadow-lg';
     }
   }
-  // Если согласных нет (например, только гласные) — золотой
   return 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 shadow-lg';
+};
+
+// ============ ЗВУКОВОЕ ОФОРМЛЕНИЕ (Web Audio API) ============
+const useSounds = () => {
+  const ctxRef = useRef(null);
+  const getCtx = () => {
+    if (typeof window === 'undefined') return null;
+    if (!ctxRef.current) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctxRef.current = new AC();
+    }
+    return ctxRef.current;
+  };
+  const tone = (freq, dur, type = 'sine', volume = 0.2) => {
+    const ctx = getCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  };
+  const sequence = (notes) => {
+    const ctx = getCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    const start = ctx.currentTime;
+    notes.forEach(([freq, offset, dur, type = 'triangle', vol = 0.25]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, start + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + offset + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start + offset);
+      osc.stop(start + offset + dur);
+    });
+  };
+  return {
+    playClick: () => tone(800, 0.05, 'sine', 0.1),
+    playCorrect: () => sequence([[523, 0, 0.09], [659, 0.09, 0.09], [784, 0.18, 0.12]]),
+    playWrong: () => {
+      const ctx = getCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.18);
+    },
+    playLevelUp: () => sequence([
+      [523, 0, 0.1],
+      [659, 0.1, 0.1],
+      [784, 0.2, 0.1],
+      [1046, 0.3, 0.25, 'triangle', 0.3],
+      [1046, 0.3, 0.25, 'sine', 0.15],
+    ]),
+  };
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
@@ -1336,6 +1407,7 @@ const AmbulanceGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
@@ -1356,6 +1428,7 @@ const AmbulanceGame = ({ car, onComplete, onBack }) => {
     if (busyRef.current) return;
     if (!currentWord) return;
     if (letter === currentWord.word[missingIdx]) {
+      sounds.playCorrect();
       busyRef.current = true;
       setShowResult('correct');
       setScore(s => {
@@ -1369,6 +1442,7 @@ const AmbulanceGame = ({ car, onComplete, onBack }) => {
         return newScore;
       });
     } else {
+      sounds.playWrong();
       setShowResult('wrong');
       setTimeout(() => setShowResult(null), 500);
     }
@@ -1518,6 +1592,7 @@ const DeliveryGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
@@ -1537,6 +1612,7 @@ const DeliveryGame = ({ car, onComplete, onBack }) => {
   const handleDeliver = (house) => {
     if (busyRef.current) return;
     if (house.syllable === currentSyllable) {
+      sounds.playCorrect();
       busyRef.current = true;
       setShowResult('correct');
       setScore(s => {
@@ -1550,6 +1626,7 @@ const DeliveryGame = ({ car, onComplete, onBack }) => {
         return newScore;
       });
     } else {
+      sounds.playWrong();
       setShowResult('wrong');
       setTimeout(() => setShowResult(null), 500);
     }
@@ -1602,6 +1679,7 @@ const RaceGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
 
   const spawnLetters = useCallback(() => {
     const correct = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
@@ -1633,7 +1711,10 @@ const RaceGame = ({ car, onComplete, onBack }) => {
         updated.forEach(l => {
           if (l.y > 70 && l.y < 90 && l.lane === carPos) {
             if (l.isCorrect) {
+              sounds.playCorrect();
               setScore(s => s + 1);
+            } else {
+              sounds.playWrong();
             }
           }
         });
@@ -2930,6 +3011,7 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
   const [shakeItem, setShakeItem] = useState(null);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 5;
 
   useEffect(() => { speak(target); }, [target, speak]);
@@ -2947,6 +3029,7 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
     if (busyRef.current) return;
     speak(item.value);
     if (item.value === target) {
+      sounds.playCorrect();
       busyRef.current = true;
       const ns = score + 1;
       setScore(ns);
@@ -2961,6 +3044,7 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
         setTimeout(() => setKey(k => k + 1), 300);
       }
     } else {
+      sounds.playWrong();
       setStreak(0);
       const newWrongAttempts = wrongAttempts + 1;
       setWrongAttempts(newWrongAttempts);
@@ -3092,6 +3176,7 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
   const [showHint, setShowHint] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 5;
 
   useEffect(() => { speak(target); }, [target, speak]);
@@ -3116,6 +3201,7 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
     speak(b.value);
     setBubbles(p => p.filter(x => x.id !== b.id));
     if (b.value === target) {
+      sounds.playCorrect();
       const ns = score + 1;
       setScore(ns);
       setWrongAttempts(0);
@@ -3126,6 +3212,7 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
         setTimeout(() => onComplete(3), 1500);
       }
     } else {
+      sounds.playWrong();
       const newWrongAttempts = wrongAttempts + 1;
       setWrongAttempts(newWrongAttempts);
 
@@ -3924,6 +4011,7 @@ const ReadSentenceGame = ({ sentence, onComplete, onBack }) => {
 const LetterLevel = ({ letterIdx, onComplete, onBack }) => {
   const [stage, setStage] = useState(0);
   const [stars, setStars] = useState(0);
+  const sounds = useSounds();
   const isVowel = letterIdx < VOWELS_HARD.length;
   const letter = isVowel ? VOWELS_HARD[letterIdx] : CONSONANTS[letterIdx - VOWELS_HARD.length];
 
@@ -3938,8 +4026,12 @@ const LetterLevel = ({ letterIdx, onComplete, onBack }) => {
 
   const next = (s) => {
     setStars(stars + s);
-    if (stage + 1 >= stages.length) onComplete(stars + s);
-    else setStage(stage + 1);
+    if (stage + 1 >= stages.length) {
+      sounds.playLevelUp();
+      onComplete(stars + s);
+    } else {
+      setStage(stage + 1);
+    }
   };
 
   const c = stages[stage];
