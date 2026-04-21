@@ -1039,6 +1039,7 @@ const ParkingGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
@@ -1057,16 +1058,19 @@ const ParkingGame = ({ car, onComplete, onBack }) => {
   const handlePark = () => {
     if (busyRef.current) return;
     if (options[carPosition] === targetLetter) {
+      sounds.playCorrect();
       busyRef.current = true;
       setShowResult('correct');
       setScore(s => s + 1);
       if (score + 1 >= targetScore) {
+        sounds.playLevelUp();
         setShowConfetti(true);
         setTimeout(() => onComplete(5), 1500);
       } else {
         setTimeout(() => { setShowResult(null); generateRound(); }, 800);
       }
     } else {
+      sounds.playWrong();
       setShowResult('wrong');
       setTimeout(() => setShowResult(null), 500);
     }
@@ -1136,6 +1140,7 @@ const FuelGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const maxFuel = 5;
 
   const generateRound = useCallback(() => {
@@ -1152,17 +1157,20 @@ const FuelGame = ({ car, onComplete, onBack }) => {
   const handleFuel = (letter) => {
     if (busyRef.current) return;
     if (letter === targetLetter) {
+      sounds.playCorrect();
       busyRef.current = true;
       setShowResult('correct');
       const newFuel = fuel + 1;
       setFuel(newFuel);
       if (newFuel >= maxFuel) {
+        sounds.playLevelUp();
         setShowConfetti(true);
         setTimeout(() => onComplete(5), 1500);
       } else {
         setTimeout(() => { setShowResult(null); generateRound(); }, 800);
       }
     } else {
+      sounds.playWrong();
       setShowResult('wrong');
       setTimeout(() => setShowResult(null), 500);
     }
@@ -1222,6 +1230,7 @@ const TaxiGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 3;
 
   const generateRound = useCallback(() => {
@@ -1249,10 +1258,12 @@ const TaxiGame = ({ car, onComplete, onBack }) => {
       speak(letter);
 
       if (newCollected.length === currentWord.word.length) {
+        sounds.playCorrect();
         busyRef.current = true;
         setShowResult('correct');
         setScore(s => s + 1);
         if (score + 1 >= targetScore) {
+          sounds.playLevelUp();
           setShowConfetti(true);
           setTimeout(() => onComplete(8), 1500);
         } else {
@@ -1260,6 +1271,7 @@ const TaxiGame = ({ car, onComplete, onBack }) => {
         }
       }
     } else {
+      sounds.playWrong();
       setShowResult('wrong');
       setTimeout(() => setShowResult(null), 500);
     }
@@ -1326,6 +1338,7 @@ const PoliceGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 5;
 
   const generateRound = useCallback(() => {
@@ -1350,10 +1363,12 @@ const PoliceGame = ({ car, onComplete, onBack }) => {
 
   const handleCatch = () => {
     if (busyRef.current) return;
+    sounds.playCorrect();
     busyRef.current = true;
     setScore(s => {
       const newScore = s + 1;
       if (newScore >= targetScore) {
+        sounds.playLevelUp();
         setShowConfetti(true);
         setTimeout(() => onComplete(6), 1500);
       } else {
@@ -1510,6 +1525,7 @@ const FireGame = ({ car, onComplete, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const busyRef = useRef(false);
   const speak = useSpeak();
+  const sounds = useSounds();
   const targetScore = 8;
 
   const generateRound = useCallback(() => {
@@ -1527,10 +1543,12 @@ const FireGame = ({ car, onComplete, onBack }) => {
     if (busyRef.current) return;
     if (!fire.active) return;
     if (fire.letter === targetLetter) {
+      sounds.playCorrect();
       setFires(f => f.map(ff => ff.id === fire.id ? { ...ff, active: false } : ff));
       setScore(s => {
         const newScore = s + 1;
         if (newScore >= targetScore) {
+          sounds.playLevelUp();
           busyRef.current = true;
           setShowConfetti(true);
           setTimeout(() => onComplete(8), 1500);
@@ -1544,6 +1562,7 @@ const FireGame = ({ car, onComplete, onBack }) => {
         setTimeout(generateRound, 500);
       }
     } else {
+      sounds.playWrong();
       setShowResult('wrong');
       setTimeout(() => setShowResult(null), 300);
     }
