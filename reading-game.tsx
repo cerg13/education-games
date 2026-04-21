@@ -859,6 +859,34 @@ const useSpeak = () => useCallback((text, rate = 0.75) => {
   }
 }, []);
 
+// ============ МЕТОД ЗАЙЦЕВА — ЦВЕТНЫЕ СКЛАДЫ ============
+// Золотые кубики — гласные, деревянные (коричневые) — звонкие, железные (серые) — глухие.
+const VOICED_CONSONANTS = new Set(['Б','В','Г','Д','Ж','З','Й','Л','М','Н','Р']);
+const VOICELESS_CONSONANTS = new Set(['К','П','С','Т','Ф','Х','Ц','Ч','Ш','Щ']);
+const ALL_VOWELS_SET = new Set([...ALL_VOWELS_HARD, ...ALL_VOWELS_SOFT]);
+
+// Возвращает Tailwind-классы для склада (цвет фона/текста по типу согласной).
+// Гласная — золотой градиент; склад со звонкой — деревянный; с глухой — железный.
+const syllableClass = (syl) => {
+  if (!syl) return 'bg-white/50 text-gray-500';
+  const s = String(syl).toUpperCase();
+  // Одиночная гласная — золотой кубик
+  if (s.length === 1 && ALL_VOWELS_SET.has(s)) {
+    return 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 shadow-lg';
+  }
+  // Ищем первую согласную в складе, по ней определяем тип кубика
+  for (const ch of s) {
+    if (VOICED_CONSONANTS.has(ch)) {
+      return 'bg-gradient-to-br from-amber-600 to-amber-800 text-white shadow-lg';
+    }
+    if (VOICELESS_CONSONANTS.has(ch)) {
+      return 'bg-gradient-to-br from-slate-400 to-slate-600 text-white shadow-lg';
+    }
+  }
+  // Если согласных нет (например, только гласные) — золотой
+  return 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 shadow-lg';
+};
+
 const getToday = () => new Date().toISOString().split('T')[0];
 
 // ============ SPACED REPETITION СИСТЕМА ============
@@ -3829,15 +3857,28 @@ const ReadWordGame = ({ wordData, onComplete, onBack }) => {
       <Confetti active={showConfetti} />
       <button onClick={onBack} className="absolute top-4 left-4 text-3xl text-white">←</button>
       <span className="text-6xl mb-4">{wordData.image}</span>
-      <div className="flex gap-2 mb-6">
-        {wordData.syllables.map((s, i) => (
-          <div key={i} className={`w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold ${
-            i < idx ? 'bg-green-400 text-white' : i === idx ? 'bg-yellow-400 text-gray-800 scale-110 animate-pulse' : 'bg-white/50 text-gray-500'
-          }`}>{s}</div>
-        ))}
+      <div className="flex gap-2 mb-6 flex-wrap justify-center">
+        {wordData.syllables.map((s, i) => {
+          const base = syllableClass(s);
+          const isDone = i < idx;
+          const isActive = i === idx;
+          // Метод Зайцева: цвет по типу склада сохраняется, активный подсвечивается ring + scale,
+          // пройденные — с зелёным ring (как галочка), будущие — слегка приглушены.
+          const stateCls = isActive
+            ? 'ring-4 ring-pink-400 scale-110 animate-pulse'
+            : isDone
+              ? 'ring-4 ring-green-400'
+              : 'opacity-70';
+          return (
+            <div key={i}
+              className={`min-w-[3.5rem] h-14 px-3 rounded-lg flex items-center justify-center text-2xl font-black tracking-wide transition-transform ${base} ${stateCls}`}>
+              {s}
+            </div>
+          );
+        })}
       </div>
       <button onClick={handleTap} className="bg-white text-teal-600 text-lg font-bold py-3 px-8 rounded-full">
-        Читай: {wordData.syllables[idx]}
+        Читай: <span className={`inline-block px-3 py-1 rounded-md ml-1 ${syllableClass(wordData.syllables[idx])}`}>{wordData.syllables[idx]}</span>
       </button>
     </div>
   );
@@ -3995,6 +4036,77 @@ const StoryReaderGame = ({ story, onComplete, onBack }) => {
 };
 
 // Детальный экран острова
+// Компактная таблица складов для экрана острова (метод Зайцева — «кубики на стене»)
+const IslandSyllableTable = ({ consonants }) => {
+  const speak = useSpeak();
+  // Фильтруем согласные — оставляем только те, что есть в SYLLABLES (без Ь/Ъ)
+  const validConsonants = consonants.filter(c => SYLLABLES[c]);
+
+  if (validConsonants.length === 0) return null;
+
+  return (
+    <section className="bg-white/20 rounded-2xl p-3">
+      <h3 className="text-white font-bold mb-2 text-center text-sm">🧱 Склады — читай и запоминай</h3>
+      {/* Шапка таблицы — гласные */}
+      <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `minmax(28px,36px) repeat(${ALL_VOWELS_HARD.length + ALL_VOWELS_SOFT.length}, minmax(0,1fr))` }}>
+        <div />
+        {ALL_VOWELS_HARD.map(v => (
+          <button
+            key={`h-${v}`}
+            onClick={() => speak(v, 0.7)}
+            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-sky-300 to-blue-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
+          >
+            {v}
+          </button>
+        ))}
+        {ALL_VOWELS_SOFT.map(v => (
+          <button
+            key={`s-${v}`}
+            onClick={() => speak(v, 0.7)}
+            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-emerald-300 to-green-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+      {/* Строки — согласная + её склады */}
+      {validConsonants.map(c => (
+        <div
+          key={c}
+          className="grid gap-1 mb-1"
+          style={{ gridTemplateColumns: `minmax(28px,36px) repeat(${ALL_VOWELS_HARD.length + ALL_VOWELS_SOFT.length}, minmax(0,1fr))` }}
+        >
+          <button
+            onClick={() => speak(c, 0.7)}
+            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-amber-300 to-orange-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
+          >
+            {c}
+          </button>
+          {SYLLABLES[c].hard.map(syl => (
+            <button
+              key={syl}
+              onClick={() => speak(syl, 0.6)}
+              className="h-8 rounded-md text-[11px] sm:text-xs font-bold bg-gradient-to-br from-blue-100 to-blue-300 text-blue-900 shadow-sm hover:from-blue-200 hover:to-blue-400 hover:scale-110 active:scale-95 transition-transform"
+            >
+              {syl}
+            </button>
+          ))}
+          {SYLLABLES[c].soft.map(syl => (
+            <button
+              key={syl}
+              onClick={() => speak(syl, 0.6)}
+              className="h-8 rounded-md text-[11px] sm:text-xs font-bold bg-gradient-to-br from-green-100 to-green-300 text-green-900 shadow-sm hover:from-green-200 hover:to-green-400 hover:scale-110 active:scale-95 transition-transform"
+            >
+              {syl}
+            </button>
+          ))}
+        </div>
+      ))}
+      <p className="text-white/60 text-[10px] text-center mt-1">Тапни по складу — услышишь его</p>
+    </section>
+  );
+};
+
 const IslandDetailScreen = ({ islandNum, profile, onSelectActivity, onBack }) => {
   const island = ISLANDS[islandNum];
   const progress = profile.progress.islands?.[islandNum] || { letters: {}, words: [], stories: [] };
@@ -4017,6 +4129,11 @@ const IslandDetailScreen = ({ islandNum, profile, onSelectActivity, onBack }) =>
       </div>
 
       <div className="flex-1 overflow-auto space-y-4 pb-4">
+        {/* Таблица складов острова (метод Зайцева — всегда перед глазами) */}
+        {island.consonants.filter(c => SYLLABLES[c]).length > 0 && (
+          <IslandSyllableTable consonants={island.consonants} />
+        )}
+
         {/* Буквы острова */}
         {(island.vowels.length > 0 || island.consonants.length > 0) && (
           <section className="bg-white/20 rounded-2xl p-4">
