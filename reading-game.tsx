@@ -4183,37 +4183,6 @@ const LetterLevel = ({ letterIdx, onComplete, onBack, profile, onLetterAttempt }
   return null;
 };
 
-const WordsLevel = ({ level, onComplete, onBack }) => {
-  const [wi, setWi] = useState(0);
-  const [stage, setStage] = useState(0);
-  const [stars, setStars] = useState(0);
-  const words = WORDS_BY_LEVEL[level];
-  const w = words[wi];
-
-  const next = (s) => {
-    setStars(stars + s);
-    if (stage === 0) setStage(1);
-    else if (wi + 1 >= words.length) onComplete(stars + s);
-    else { setWi(wi + 1); setStage(0); }
-  };
-
-  if (stage === 0) return <BuildWordGame wordData={w} onComplete={next} onBack={onBack} />;
-  return <ReadWordGame wordData={w} onComplete={next} onBack={onBack} />;
-};
-
-const SentenceLevel = ({ onComplete, onBack }) => {
-  const [idx, setIdx] = useState(0);
-  const [stars, setStars] = useState(0);
-
-  const next = (s) => {
-    setStars(stars + s);
-    if (idx + 1 >= SENTENCES.length) onComplete(stars + s);
-    else setIdx(idx + 1);
-  };
-
-  return <ReadSentenceGame sentence={SENTENCES[idx]} onComplete={next} onBack={onBack} />;
-};
-
 // Компонент для чтения историй (5-й остров)
 const StoryReaderGame = ({ story, onComplete, onBack }) => {
   const [sentenceIdx, setSentenceIdx] = useState(0);
@@ -4341,77 +4310,6 @@ const IslandSyllableTable = ({ consonants }) => {
 };
 
 // Детальный экран острова
-// Компактная таблица складов для экрана острова (метод Зайцева — «кубики на стене»)
-const IslandSyllableTable = ({ consonants }) => {
-  const speak = useSpeak();
-  // Фильтруем согласные — оставляем только те, что есть в SYLLABLES (без Ь/Ъ)
-  const validConsonants = consonants.filter(c => SYLLABLES[c]);
-
-  if (validConsonants.length === 0) return null;
-
-  return (
-    <section className="bg-white/20 rounded-2xl p-3">
-      <h3 className="text-white font-bold mb-2 text-center text-sm">🧱 Склады — читай и запоминай</h3>
-      {/* Шапка таблицы — гласные */}
-      <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `minmax(28px,36px) repeat(${ALL_VOWELS_HARD.length + ALL_VOWELS_SOFT.length}, minmax(0,1fr))` }}>
-        <div />
-        {ALL_VOWELS_HARD.map(v => (
-          <button
-            key={`h-${v}`}
-            onClick={() => speak(v, 0.7)}
-            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-sky-300 to-blue-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
-          >
-            {v}
-          </button>
-        ))}
-        {ALL_VOWELS_SOFT.map(v => (
-          <button
-            key={`s-${v}`}
-            onClick={() => speak(v, 0.7)}
-            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-emerald-300 to-green-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-      {/* Строки — согласная + её склады */}
-      {validConsonants.map(c => (
-        <div
-          key={c}
-          className="grid gap-1 mb-1"
-          style={{ gridTemplateColumns: `minmax(28px,36px) repeat(${ALL_VOWELS_HARD.length + ALL_VOWELS_SOFT.length}, minmax(0,1fr))` }}
-        >
-          <button
-            onClick={() => speak(c, 0.7)}
-            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-amber-300 to-orange-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
-          >
-            {c}
-          </button>
-          {SYLLABLES[c].hard.map(syl => (
-            <button
-              key={syl}
-              onClick={() => speak(syl, 0.6)}
-              className="h-8 rounded-md text-[11px] sm:text-xs font-bold bg-gradient-to-br from-blue-100 to-blue-300 text-blue-900 shadow-sm hover:from-blue-200 hover:to-blue-400 hover:scale-110 active:scale-95 transition-transform"
-            >
-              {syl}
-            </button>
-          ))}
-          {SYLLABLES[c].soft.map(syl => (
-            <button
-              key={syl}
-              onClick={() => speak(syl, 0.6)}
-              className="h-8 rounded-md text-[11px] sm:text-xs font-bold bg-gradient-to-br from-green-100 to-green-300 text-green-900 shadow-sm hover:from-green-200 hover:to-green-400 hover:scale-110 active:scale-95 transition-transform"
-            >
-              {syl}
-            </button>
-          ))}
-        </div>
-      ))}
-      <p className="text-white/60 text-[10px] text-center mt-1">Тапни по складу — услышишь его</p>
-    </section>
-  );
-};
-
 const IslandDetailScreen = ({ islandNum, profile, onSelectActivity, onBack }) => {
   const island = ISLANDS[islandNum];
   const progress = profile.progress.islands?.[islandNum] || { letters: {}, words: [], stories: [] };
@@ -5285,11 +5183,6 @@ function ReadingGame() {
     if (currentLevel.type === 'letter') {
       updated.progress.letters = [...updated.progress.letters];
       updated.progress.letters[currentLevel.idx] = true;
-    } else if (currentLevel.type === 'words') {
-      updated.progress.words = [...updated.progress.words];
-      updated.progress.words[currentLevel.idx - 1] = true;
-    } else if (currentLevel.type === 'sentences') {
-      updated.progress.sentences = true;
     }
 
     await updateProfile(updated);
@@ -5384,8 +5277,6 @@ function ReadingGame() {
 
   if (screen === 'level') {
     if (currentLevel.type === 'letter') return <LetterLevel letterIdx={currentLevel.idx} onComplete={handleComplete} onBack={() => setScreen('map')} profile={currentProfile} onLetterAttempt={handleLetterAttempt} />;
-    if (currentLevel.type === 'words') return <WordsLevel level={currentLevel.idx} onComplete={handleComplete} onBack={() => setScreen('map')} />;
-    if (currentLevel.type === 'sentences') return <SentenceLevel onComplete={handleComplete} onBack={() => setScreen('map')} />;
   }
 
   const handleReviewLetter = (islandNum, letter) => {
