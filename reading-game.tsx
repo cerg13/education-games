@@ -884,6 +884,51 @@ const syllableClass = (syl) => {
   return 'bg-gradient-to-br from-yellow-300 to-amber-400 text-amber-900 shadow-lg';
 };
 
+// ============ ADAPTIVE REPETITION PER LETTER ============
+// Частота появления буквы в мини-играх зависит от того, насколько хорошо ребёнок её освоил.
+// Слабоосвоенные буквы появляются чаще, пока не закрепятся.
+
+const getLetterMastery = (stats, letter) => {
+  const s = stats?.[letter];
+  if (!s || s.attempts === 0) return 0;
+  return s.correct / s.attempts;
+};
+
+const isLetterMastered = (stats, letter) => {
+  const s = stats?.[letter];
+  if (!s) return false;
+  return s.attempts >= 5 && (s.correct / s.attempts) >= 0.8;
+};
+
+// Выбрать букву из pool с вероятностью обратно пропорциональной mastery.
+// weight = 1 / (0.2 + mastery) → неосвоенные (mastery=0) имеют вес 5, освоенные (mastery=1) — ~0.83.
+const pickAdaptiveLetter = (stats, pool) => {
+  if (!pool || pool.length === 0) return null;
+  if (pool.length === 1) return pool[0];
+  const weights = pool.map(l => 1 / (0.2 + getLetterMastery(stats, l)));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+};
+
+// Обновить статистику по букве (иммутабельно).
+const recordLetterAttempt = (stats, letter, isCorrect) => {
+  const prev = (stats && stats[letter]) || { attempts: 0, correct: 0, wrongRecent: 0, lastSeen: '' };
+  return {
+    ...(stats || {}),
+    [letter]: {
+      attempts: prev.attempts + 1,
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      wrongRecent: isCorrect ? Math.max(0, prev.wrongRecent - 1) : prev.wrongRecent + 1,
+      lastSeen: new Date().toISOString().split('T')[0],
+    },
+  };
+};
+
 // ============ ЗВУКОВОЕ ОФОРМЛЕНИЕ (Web Audio API) ============
 const useSounds = () => {
   const ctxRef = useRef(null);
@@ -3018,7 +3063,7 @@ const ParentDashboard = ({ profile, onBack }) => {
 };
 
 // Игры
-const FindGame = ({ target, options, onComplete, onBack, title }) => {
+const FindGame = ({ target: targetProp, options, onComplete, onBack, title, profile, onLetterAttempt }) => {
   const [score, setScore] = useState(0);
   const [items, setItems] = useState([]);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -3028,10 +3073,30 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [shakeItem, setShakeItem] = useState(null);
+  // Adaptive target: если передан profile И options — это список отдельных букв,
+  // стартуем с адаптивного выбора (слабоосвоенные буквы чаще).
+  // Иначе используем фиксированный target из пропса (fallback к обычному поведению).
+  const isSingleLetterPool = options && options.length > 1 && options.every(o => typeof o === 'string' && o.length === 1);
+  const [target, setTarget] = useState(() => {
+    if (profile && isSingleLetterPool) {
+      return pickAdaptiveLetter(profile.letterStats, options) || targetProp;
+    }
+    return targetProp;
+  });
   const busyRef = useRef(false);
   const speak = useSpeak();
   const sounds = useSounds();
   const targetScore = 5;
+
+  // При смене targetProp (новая стадия в LetterLevel) — ресинхрон или новый адаптивный пик.
+  useEffect(() => {
+    if (profile && isSingleLetterPool) {
+      setTarget(pickAdaptiveLetter(profile.letterStats, options) || targetProp);
+    } else {
+      setTarget(targetProp);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetProp]);
 
   useEffect(() => { speak(target); }, [target, speak]);
 
@@ -3048,6 +3113,10 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
     if (busyRef.current) return;
     speak(item.value);
     if (item.value === target) {
+      // Статистика: правильно нашли target-букву
+      if (onLetterAttempt && typeof target === 'string' && target.length === 1) {
+        onLetterAttempt(target, true);
+      }
       sounds.playCorrect();
       busyRef.current = true;
       const ns = score + 1;
@@ -3060,9 +3129,20 @@ const FindGame = ({ target, options, onComplete, onBack, title }) => {
         setShowConfetti(true);
         setTimeout(() => onComplete(3), 1500);
       } else {
-        setTimeout(() => setKey(k => k + 1), 300);
+        // Следующий раунд: если adaptive-режим — можем подменить target на новый адаптивный пик.
+        setTimeout(() => {
+          if (profile && isSingleLetterPool) {
+            const next = pickAdaptiveLetter(profile.letterStats, options);
+            if (next && next !== target) setTarget(next);
+          }
+          setKey(k => k + 1);
+        }, 300);
       }
     } else {
+      // Статистика: ошибка по target-букве (ребёнок не узнал её среди отвлекающих)
+      if (onLetterAttempt && typeof target === 'string' && target.length === 1) {
+        onLetterAttempt(target, false);
+      }
       sounds.playWrong();
       setStreak(0);
       const newWrongAttempts = wrongAttempts + 1;
@@ -3187,28 +3267,59 @@ const SyllableTable = ({ consonant, onComplete, onBack }) => {
   );
 };
 
-const BubbleGame = ({ target, pool, onComplete, onBack }) => {
+const BubbleGame = ({ target: targetProp, pool, onComplete, onBack, profile, onLetterAttempt }) => {
   const [bubbles, setBubbles] = useState([]);
   const [score, setScore] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
+  // Adaptive target: если передан profile и pool состоит из отдельных букв,
+  // выбираем target адаптивно из {targetProp + pool} — слабоосвоенные буквы чаще.
+  const isSingleLetterPool = pool && pool.length > 0 && pool.every(o => typeof o === 'string' && o.length === 1);
+  const adaptivePool = useRef(null);
+  if (!adaptivePool.current) {
+    adaptivePool.current = isSingleLetterPool && typeof targetProp === 'string' && targetProp.length === 1
+      ? Array.from(new Set([targetProp, ...pool]))
+      : null;
+  }
+  const [target, setTarget] = useState(() => {
+    if (profile && adaptivePool.current) {
+      return pickAdaptiveLetter(profile.letterStats, adaptivePool.current) || targetProp;
+    }
+    return targetProp;
+  });
   const busyRef = useRef(false);
   const speak = useSpeak();
   const sounds = useSounds();
   const targetScore = 5;
 
+  // Следим за сменой targetProp (новая стадия).
+  useEffect(() => {
+    if (profile && adaptivePool.current) {
+      setTarget(pickAdaptiveLetter(profile.letterStats, adaptivePool.current) || targetProp);
+    } else {
+      setTarget(targetProp);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetProp]);
+
   useEffect(() => { speak(target); }, [target, speak]);
+
+  // Эффективный pool для "чужих" пузырей (все буквы кроме target).
+  const effectivePool = adaptivePool.current
+    ? adaptivePool.current.filter(l => l !== target)
+    : pool;
 
   useEffect(() => {
     const i = setInterval(() => {
       if (bubbles.length < 6) {
-        const v = Math.random() > 0.5 ? target : pool[Math.floor(Math.random() * pool.length)];
+        const poolSrc = effectivePool.length ? effectivePool : pool;
+        const v = Math.random() > 0.5 ? target : poolSrc[Math.floor(Math.random() * poolSrc.length)];
         setBubbles(p => [...p, { id: Date.now() + Math.random(), value: v, x: 8 + Math.random() * 78, y: 105, speed: 0.3 + Math.random() * 0.25 }]);
       }
     }, 900);
     return () => clearInterval(i);
-  }, [bubbles.length, target, pool]);
+  }, [bubbles.length, target, pool, effectivePool]);
 
   useEffect(() => {
     const i = setInterval(() => setBubbles(p => p.map(b => ({ ...b, y: b.y - b.speed })).filter(b => b.y > -10)), 50);
@@ -3220,6 +3331,10 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
     speak(b.value);
     setBubbles(p => p.filter(x => x.id !== b.id));
     if (b.value === target) {
+      // Статистика: правильно лопнули target
+      if (onLetterAttempt && typeof target === 'string' && target.length === 1) {
+        onLetterAttempt(target, true);
+      }
       sounds.playCorrect();
       const ns = score + 1;
       setScore(ns);
@@ -3231,6 +3346,10 @@ const BubbleGame = ({ target, pool, onComplete, onBack }) => {
         setTimeout(() => onComplete(3), 1500);
       }
     } else {
+      // Статистика: ошибка по target-букве (лопнули не ту)
+      if (onLetterAttempt && typeof target === 'string' && target.length === 1) {
+        onLetterAttempt(target, false);
+      }
       sounds.playWrong();
       const newWrongAttempts = wrongAttempts + 1;
       setWrongAttempts(newWrongAttempts);
@@ -4027,7 +4146,7 @@ const ReadSentenceGame = ({ sentence, onComplete, onBack }) => {
 };
 
 // Уровни
-const LetterLevel = ({ letterIdx, onComplete, onBack }) => {
+const LetterLevel = ({ letterIdx, onComplete, onBack, profile, onLetterAttempt }) => {
   const [stage, setStage] = useState(0);
   const [stars, setStars] = useState(0);
   const sounds = useSounds();
@@ -4054,9 +4173,13 @@ const LetterLevel = ({ letterIdx, onComplete, onBack }) => {
   };
 
   const c = stages[stage];
-  if (c.type === 'find') return <FindGame target={c.target} options={c.options} title={isVowel ? 'Гласная' : c.target.length > 1 ? 'Склад' : 'Согласная'} onComplete={next} onBack={onBack} />;
+  // Adaptive-режим активен только для стадий, где target — отдельная буква (не склад).
+  // Для find (буквы) options — список одиночных букв → FindGame сам пикнет адаптивно.
+  // Для bubble (буквы) pool — тоже отдельные буквы.
+  // Для find/bubble со складами adaptive игнорируется (length > 1).
+  if (c.type === 'find') return <FindGame target={c.target} options={c.options} title={isVowel ? 'Гласная' : c.target.length > 1 ? 'Склад' : 'Согласная'} onComplete={next} onBack={onBack} profile={profile} onLetterAttempt={onLetterAttempt} />;
   if (c.type === 'table') return <SyllableTable consonant={c.consonant} onComplete={next} onBack={onBack} />;
-  if (c.type === 'bubble') return <BubbleGame target={c.target} pool={c.pool} onComplete={next} onBack={onBack} />;
+  if (c.type === 'bubble') return <BubbleGame target={c.target} pool={c.pool} onComplete={next} onBack={onBack} profile={profile} onLetterAttempt={onLetterAttempt} />;
   return null;
 };
 
@@ -4995,6 +5118,15 @@ function ReadingGame() {
     }
   };
 
+  // Adaptive repetition: запись попытки по букве. Персистится через debounced useEffect на currentProfile.
+  const handleLetterAttempt = useCallback((letter, isCorrect) => {
+    if (!letter || typeof letter !== 'string' || letter.length !== 1) return;
+    setCurrentProfile(p => {
+      if (!p) return p;
+      return { ...p, letterStats: recordLetterAttempt(p.letterStats || {}, letter, isCorrect) };
+    });
+  }, []);
+
   const handleCreateProfile = async ({ name, character }) => {
     const newProfile = {
       id: Date.now().toString(),
@@ -5229,7 +5361,9 @@ function ReadingGame() {
         ? [...ALL_VOWELS_HARD, ...ALL_VOWELS_SOFT].filter(v => v !== letter)
         : ALL_CONSONANTS.filter(c => c !== letter);
 
-      return <BubbleGame target={letter} pool={pool} onComplete={handleActivityComplete} onBack={() => setScreen('island')} />;
+      // Целенаправленное изучение конкретной буквы: target не меняем (profile не передаём),
+      // но пишем статистику через onLetterAttempt.
+      return <BubbleGame target={letter} pool={pool} onComplete={handleActivityComplete} onBack={() => setScreen('island')} onLetterAttempt={handleLetterAttempt} />;
     }
 
     if (activityType === 'word') {
@@ -5249,7 +5383,7 @@ function ReadingGame() {
   }
 
   if (screen === 'level') {
-    if (currentLevel.type === 'letter') return <LetterLevel letterIdx={currentLevel.idx} onComplete={handleComplete} onBack={() => setScreen('map')} />;
+    if (currentLevel.type === 'letter') return <LetterLevel letterIdx={currentLevel.idx} onComplete={handleComplete} onBack={() => setScreen('map')} profile={currentProfile} onLetterAttempt={handleLetterAttempt} />;
     if (currentLevel.type === 'words') return <WordsLevel level={currentLevel.idx} onComplete={handleComplete} onBack={() => setScreen('map')} />;
     if (currentLevel.type === 'sentences') return <SentenceLevel onComplete={handleComplete} onBack={() => setScreen('map')} />;
   }
@@ -5302,7 +5436,8 @@ function ReadingGame() {
       ? [...ALL_VOWELS_HARD, ...ALL_VOWELS_SOFT].filter(v => v !== letter)
       : ALL_CONSONANTS.filter(c => c !== letter);
 
-    return <BubbleGame target={letter} pool={pool} onComplete={handleReviewComplete} onBack={() => setScreen('reviewScreen')} />;
+    // Review конкретной буквы: target зафиксирован, но пишем статистику.
+    return <BubbleGame target={letter} pool={pool} onComplete={handleReviewComplete} onBack={() => setScreen('reviewScreen')} onLetterAttempt={handleLetterAttempt} />;
   }
 
   if (screen === 'map') {
