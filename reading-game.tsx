@@ -4035,6 +4035,77 @@ const StoryReaderGame = ({ story, onComplete, onBack }) => {
   );
 };
 
+// Компактная таблица складов для экрана острова (метод Зайцева — «кубики на стене»)
+const IslandSyllableTable = ({ consonants }) => {
+  const speak = useSpeak();
+  // Фильтруем согласные — оставляем только те, что есть в SYLLABLES (без Ь/Ъ)
+  const validConsonants = consonants.filter(c => SYLLABLES[c]);
+
+  if (validConsonants.length === 0) return null;
+
+  return (
+    <section className="bg-white/20 rounded-2xl p-3">
+      <h3 className="text-white font-bold mb-2 text-center text-sm">🧱 Склады — читай и запоминай</h3>
+      {/* Шапка таблицы — гласные */}
+      <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `minmax(28px,36px) repeat(${ALL_VOWELS_HARD.length + ALL_VOWELS_SOFT.length}, minmax(0,1fr))` }}>
+        <div />
+        {ALL_VOWELS_HARD.map(v => (
+          <button
+            key={`h-${v}`}
+            onClick={() => speak(v, 0.7)}
+            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-sky-300 to-blue-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
+          >
+            {v}
+          </button>
+        ))}
+        {ALL_VOWELS_SOFT.map(v => (
+          <button
+            key={`s-${v}`}
+            onClick={() => speak(v, 0.7)}
+            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-emerald-300 to-green-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+      {/* Строки — согласная + её склады */}
+      {validConsonants.map(c => (
+        <div
+          key={c}
+          className="grid gap-1 mb-1"
+          style={{ gridTemplateColumns: `minmax(28px,36px) repeat(${ALL_VOWELS_HARD.length + ALL_VOWELS_SOFT.length}, minmax(0,1fr))` }}
+        >
+          <button
+            onClick={() => speak(c, 0.7)}
+            className="h-8 rounded-md text-sm font-bold bg-gradient-to-br from-amber-300 to-orange-500 text-white shadow hover:scale-110 active:scale-95 transition-transform"
+          >
+            {c}
+          </button>
+          {SYLLABLES[c].hard.map(syl => (
+            <button
+              key={syl}
+              onClick={() => speak(syl, 0.6)}
+              className="h-8 rounded-md text-[11px] sm:text-xs font-bold bg-gradient-to-br from-blue-100 to-blue-300 text-blue-900 shadow-sm hover:from-blue-200 hover:to-blue-400 hover:scale-110 active:scale-95 transition-transform"
+            >
+              {syl}
+            </button>
+          ))}
+          {SYLLABLES[c].soft.map(syl => (
+            <button
+              key={syl}
+              onClick={() => speak(syl, 0.6)}
+              className="h-8 rounded-md text-[11px] sm:text-xs font-bold bg-gradient-to-br from-green-100 to-green-300 text-green-900 shadow-sm hover:from-green-200 hover:to-green-400 hover:scale-110 active:scale-95 transition-transform"
+            >
+              {syl}
+            </button>
+          ))}
+        </div>
+      ))}
+      <p className="text-white/60 text-[10px] text-center mt-1">Тапни по складу — услышишь его</p>
+    </section>
+  );
+};
+
 // Детальный экран острова
 // Компактная таблица складов для экрана острова (метод Зайцева — «кубики на стене»)
 const IslandSyllableTable = ({ consonants }) => {
