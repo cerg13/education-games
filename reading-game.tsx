@@ -4560,7 +4560,7 @@ const ReviewScreen = ({ profile, onReviewLetter, onBack }) => {
 };
 
 // Карта
-const MapScreen = ({ profile, onSelect, onEvolution, onStats, onReview, onParent, onShop, onGarage, onAchievements, onDailyChallenges }) => {
+const MapScreen = ({ profile, onSelect, onEvolution, onStats, onReview, onParent, onParentStats, onShop, onGarage, onAchievements, onDailyChallenges }) => {
   const char = CHARACTERS.find(c => c.id === profile.character);
   const speak = useSpeak();
 
@@ -4704,7 +4704,197 @@ const MapScreen = ({ profile, onSelect, onEvolution, onStats, onReview, onParent
             </button>
           );
         })}
+
+        {/* Приглушённая кнопка «Для родителей» — статистика по буквам */}
+        <button
+          onClick={onParentStats}
+          className="w-full text-center text-white/60 hover:text-white/90 text-xs py-2 border-t border-white/10 mt-2"
+        >
+          Для родителей 👨‍👩‍👧
+        </button>
       </div>
+    </div>
+  );
+};
+
+// Экран статистики для родителей (НЕ путать с ParentDashboard — это минималистичный отчёт по letterStats)
+const ParentStatsScreen = ({ profile, onBack }) => {
+  const [unlocked, setUnlocked] = useState(false);
+  const [pinAnswer, setPinAnswer] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  // PIN-гейт: простая арифметика, чтобы ребёнок случайно не зашёл.
+  // 7 + 5 = 12 — одно и то же каждый раз (защита не от взлома, а от случайного нажатия).
+  const checkPin = () => {
+    if (pinAnswer.trim() === '12') {
+      setUnlocked(true);
+      setPinError(false);
+    } else {
+      setPinError(true);
+      setTimeout(() => onBack(), 800);
+    }
+  };
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-700 to-blue-900 p-6 flex flex-col items-center justify-center">
+        <button onClick={onBack} className="absolute top-4 left-4 text-3xl text-white">←</button>
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+          <h2 className="text-xl font-bold text-slate-800 mb-2 text-center">Проверка для родителей</h2>
+          <p className="text-sm text-slate-600 mb-4 text-center">Сколько будет 7 + 5?</p>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={pinAnswer}
+            onChange={(e) => setPinAnswer(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') checkPin(); }}
+            className={`w-full text-2xl text-center py-3 px-4 rounded-xl border-2 outline-none mb-3 ${pinError ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+            placeholder="Ответ"
+            autoFocus
+          />
+          {pinError && <p className="text-red-600 text-sm text-center mb-2">Неверно. Закрываем…</p>}
+          <button
+            onClick={checkPin}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition"
+          >
+            Продолжить
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Безопасное чтение letterStats (создаёт другой агент — может не быть)
+  const letterStats = profile.letterStats || {};
+  const char = CHARACTERS.find(c => c.id === profile.character);
+
+  // Сортируем буквы по наличию попыток + алфавиту
+  const allLetters = [...ALL_VOWELS_HARD, ...ALL_VOWELS_SOFT, ...ALL_CONSONANTS];
+  const letterRows = allLetters
+    .map(letter => {
+      const s = letterStats[letter] || { attempts: 0, correct: 0, wrongRecent: 0, lastSeen: null };
+      const attempts = s.attempts || 0;
+      const correct = s.correct || 0;
+      const rate = attempts > 0 ? correct / attempts : 0;
+      let status = 'none';
+      if (attempts > 0) {
+        if (attempts >= 5 && rate >= 0.8) status = 'mastered';
+        else if (attempts >= 3 && rate >= 0.5) status = 'learning';
+        else status = 'weak';
+      }
+      return { letter, attempts, correct, rate, status, lastSeen: s.lastSeen };
+    })
+    .filter(r => r.attempts > 0 || r.status === 'none');
+
+  const practiced = letterRows.filter(r => r.attempts > 0);
+  const weakest = practiced
+    .filter(r => r.status === 'weak')
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 3);
+
+  const statusBadge = (status) => {
+    if (status === 'mastered') return { icon: '🟢', text: 'освоено', color: 'text-green-700 bg-green-50' };
+    if (status === 'learning') return { icon: '🟡', text: 'в процессе', color: 'text-yellow-700 bg-yellow-50' };
+    if (status === 'weak') return { icon: '🔴', text: 'слабо', color: 'text-red-700 bg-red-50' };
+    return { icon: '⚪', text: '—', color: 'text-slate-500 bg-slate-50' };
+  };
+
+  const totalStars = profile.totalStars ?? profile.stars ?? 0;
+  const masteredCount = practiced.filter(r => r.status === 'mastered').length;
+  const learningCount = practiced.filter(r => r.status === 'learning').length;
+  const weakCount = practiced.filter(r => r.status === 'weak').length;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-blue-50 p-4">
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onBack} className="text-blue-700 font-semibold">← Назад</button>
+        <h1 className="text-xl font-bold text-slate-800">Статистика по буквам</h1>
+        <div className="w-16" />
+      </div>
+
+      {/* Карточка ребёнка */}
+      <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="text-4xl">{char?.emoji || '👤'}</div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-slate-800">{profile.name}</h2>
+            <p className="text-xs text-slate-500">{char?.name || '—'}</p>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-slate-500">Всего звёзд</div>
+            <div className="text-xl font-bold text-blue-700">⭐ {totalStars}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="bg-green-50 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-green-700">{masteredCount}</div>
+            <div className="text-[11px] text-green-700">освоено</div>
+          </div>
+          <div className="bg-yellow-50 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-yellow-700">{learningCount}</div>
+            <div className="text-[11px] text-yellow-700">в процессе</div>
+          </div>
+          <div className="bg-red-50 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-red-700">{weakCount}</div>
+            <div className="text-[11px] text-red-700">слабо</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Рекомендации */}
+      {weakest.length > 0 && (
+        <div className="bg-blue-600 text-white rounded-2xl p-4 mb-4 shadow-sm">
+          <h3 className="font-bold mb-1">💡 Повторите с ребёнком</h3>
+          <p className="text-sm text-blue-50 mb-2">Эти буквы даются тяжелее всего:</p>
+          <div className="flex gap-2 flex-wrap">
+            {weakest.map(w => (
+              <span key={w.letter} className="bg-white text-blue-700 font-bold px-3 py-1 rounded-lg">
+                {w.letter}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Таблица по буквам */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-4">
+        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-slate-100 text-[11px] font-semibold text-slate-600 uppercase">
+          <div className="col-span-2">Буква</div>
+          <div className="col-span-2 text-center">Попыток</div>
+          <div className="col-span-2 text-center">Верно</div>
+          <div className="col-span-2 text-center">%</div>
+          <div className="col-span-4">Статус</div>
+        </div>
+        {letterRows.length === 0 && (
+          <div className="p-4 text-center text-slate-500 text-sm">Нет данных. Ребёнок ещё не занимался.</div>
+        )}
+        {letterRows.map(r => {
+          const b = statusBadge(r.status);
+          return (
+            <div key={r.letter} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-slate-100 items-center">
+              <div className="col-span-2 text-xl font-bold text-slate-800">{r.letter}</div>
+              <div className="col-span-2 text-center text-slate-700">{r.attempts}</div>
+              <div className="col-span-2 text-center text-slate-700">{r.correct}</div>
+              <div className="col-span-2 text-center text-slate-700">
+                {r.attempts > 0 ? `${Math.round(r.rate * 100)}%` : '—'}
+              </div>
+              <div className="col-span-4">
+                <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${b.color}`}>
+                  <span>{b.icon}</span>
+                  <span>{b.text}</span>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={onBack}
+        className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition"
+      >
+        ← В главное меню
+      </button>
     </div>
   );
 };
@@ -5012,6 +5202,7 @@ function ReadingGame() {
   if (screen === 'achievements') return <AchievementsScreen profile={currentProfile} onBack={() => setScreen('map')} />;
   if (screen === 'dailyChallenges') return <DailyChallengesScreen profile={currentProfile} onBack={() => setScreen('map')} onUpdateProfile={updateProfile} />;
   if (screen === 'parent') return <ParentDashboard profile={currentProfile} onBack={() => setScreen('map')} />;
+  if (screen === 'parentStats') return <ParentStatsScreen profile={currentProfile} onBack={() => setScreen('map')} />;
 
   // Экран острова (детальный просмотр)
   if (screen === 'island') {
@@ -5117,7 +5308,7 @@ function ReadingGame() {
   if (screen === 'map') {
     return (
       <>
-        <MapScreen profile={currentProfile} onSelect={handleSelect} onEvolution={() => setScreen('evolution')} onStats={() => setScreen('stats')} onReview={() => setScreen('reviewScreen')} onParent={() => setScreen('parent')} onShop={() => setScreen('shop')} onGarage={() => setScreen('garage')} onAchievements={() => setScreen('achievements')} onDailyChallenges={() => setScreen('dailyChallenges')} />
+        <MapScreen profile={currentProfile} onSelect={handleSelect} onEvolution={() => setScreen('evolution')} onStats={() => setScreen('stats')} onReview={() => setScreen('reviewScreen')} onParent={() => setScreen('parent')} onParentStats={() => setScreen('parentStats')} onShop={() => setScreen('shop')} onGarage={() => setScreen('garage')} onAchievements={() => setScreen('achievements')} onDailyChallenges={() => setScreen('dailyChallenges')} />
 
         {/* Session End Modal */}
         {showSessionEnd && (
