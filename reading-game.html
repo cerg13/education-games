@@ -18,7 +18,39 @@
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">Загрузка…</div>
+
+  <script>
+    // iPad Safari debug: показывает JS ошибки прямо на экране
+    window.__dbg = [];
+    function __showDbg(title) {
+      var root = document.getElementById('root');
+      if (!root) return;
+      while (root.firstChild) root.removeChild(root.firstChild);
+      var pre = document.createElement('pre');
+      pre.style.cssText = 'color:#c00;padding:20px;white-space:pre-wrap;font-size:13px;background:#fff;';
+      pre.textContent = title + '\n\nUA: ' + navigator.userAgent + '\n\n' +
+        'React: ' + (typeof React) + ', ReactDOM: ' + (typeof ReactDOM) +
+        ', Babel: ' + (typeof Babel) + '\n\nEvents:\n' +
+        (window.__dbg.join('\n\n') || '(none)');
+      root.appendChild(pre);
+    }
+    window.addEventListener('error', function(e) {
+      window.__dbg.push('ERROR: ' + (e.message || e.error) +
+        '\nat: ' + (e.filename || '?') + ':' + (e.lineno || '?'));
+      __showDbg('JS ERROR');
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      window.__dbg.push('PROMISE REJECT: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+      __showDbg('PROMISE REJECTED');
+    });
+    setTimeout(function() {
+      var root = document.getElementById('root');
+      if (root && root.textContent === 'Загрузка…') {
+        __showDbg('WATCHDOG 10s');
+      }
+    }, 10000);
+  </script>
 
   <script>
     window.storage = {
@@ -43,6 +75,33 @@
     };
   </script>
 
-  <script type="text/babel" src="./reading-game.tsx"></script>
+  <!-- iOS Safari блокирует <script type="text/babel" src="...">,
+       когда сервер отдаёт .tsx как application/octet-stream.
+       Обходим через fetch+Babel.transform. -->
+  <script>
+    (function() {
+      function loadGame() {
+        if (typeof Babel === 'undefined') { setTimeout(loadGame, 50); return; }
+        fetch('./reading-game.tsx?v=' + Date.now())
+          .then(function(r) {
+            if (!r.ok) throw new Error('tsx fetch failed: ' + r.status);
+            return r.text();
+          })
+          .then(function(src) {
+            var compiled = Babel.transform(src, {
+              presets: ['react', ['env', { targets: { safari: '12' } }]]
+            }).code;
+            var s = document.createElement('script');
+            s.textContent = compiled;
+            document.body.appendChild(s);
+          })
+          .catch(function(err) {
+            window.__dbg.push('LOAD GAME FAILED: ' + (err.message || err));
+            __showDbg('LOAD FAILED');
+          });
+      }
+      loadGame();
+    })();
+  </script>
 </body>
 </html>

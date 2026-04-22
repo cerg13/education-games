@@ -12,7 +12,15 @@ app.use(cors());
 app.use(express.json());
 
 // Раздача статических файлов
-app.use(express.static(path.join(__dirname, '..')));
+// Принудительный MIME для .tsx: Express по умолчанию отдаёт application/octet-stream,
+// что блокируется iOS Safari при fetch/babel load.
+app.use(express.static(path.join(__dirname, '..'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.tsx') || filePath.endsWith('.ts') || filePath.endsWith('.jsx')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+  },
+}));
 
 // Создаём файл данных если его нет
 async function ensureDataFile() {
